@@ -148,13 +148,13 @@ workflows. A **HollywoodTestKit** is in the works
 
 ## Adding Hollywood as a Dependency
 
-To use the `Hollywood` and HollywoodUI` libraries in a SwiftPM project, add the following to your `Package.swift` file:
+To use the `Hollywood` and `HollywoodUI` libraries in a SwiftPM project, add the following to your `Package.swift` file:
 
 ```
 .package(url: "https://github.com/briancoyner/hollywood.git", branch: "main"),
 ```
 
-Include `"Hollywood"` and/ or `"HollywoodUI" as a dependency:
+Include `"Hollywood"` and/ or `"HollywoodUI"` as a dependency:
 
 ```
 .target(name: "<target>", dependencies: [
