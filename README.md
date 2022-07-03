@@ -14,6 +14,8 @@ A good way to think about this protocol is that it forces you to give a discover
 function. For a large code base, with multiple developers contributing code, this helps with discoverability,
 maintenance, and just generally helps organize reusable functions.
 
+![GeneralDiagram](GeneralDiagram.png)
+
 `WorkflowAction`s are composable. This means it's super easy to stitch together `WorkflowAction`s into a complex
 asynchronous execution graph. To further help with discoverability and maintenance, you can lean on the 
 `CompositeWorkflowAction`. 
