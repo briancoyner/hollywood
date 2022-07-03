@@ -148,32 +148,26 @@ workflows. A **HollywoodTestKit** is in the works
 - iOS 16+ (yep, it's leaning on new Swift 5.7 beta features)
 - macOS 12+
 
-## Installation
+## Adding Hollywood as a Dependency
 
-The Swift Package Manager is a dependency manager integrated with the Swift build system. To learn how to use the Swift 
-Package Manager for your project, please read the [docs](https://github.com/apple/swift-package-manager/blob/master/Documentation/Usage.md).  
+To use the `Hollywood` and `HollywoodUI` libraries in a SwiftPM project, add the following to your `Package.swift` file:
 
-Here's a quick example that may help:
+Adding Hollywood as a Dependency
 
-```swift
-// swift-tools-version:5.7
-import PackageDescription
-let package = Package(
-    name: "<Your Product Name>",
-    dependencies: [
-        .package(url: "https://github.com/briancoyner/hollywood.git", branch: "main"),
-    ],
-    targets: [
-        .target(
-            name: "<Your Target Name>",
-            dependencies: [
-                "hollywood",
-                "hollywoodUI"
-            ]
-        )
-    ]
-)
+To use the Hollywood and HollywoodUI libraries in a SwiftPM project, add the following to your Package.swift file:
+
 ```
+.package(url: "https://github.com/briancoyner/hollywood.git", branch: "main"),
+```
+
+```
+.target(name: "<target>", dependencies: [
+     .product(name: "Hollywood", package: "hollywood"),
+     .product(name: "HollywoodUI", package: "hollywood")
+]),
+```
+
+Finally, add `import Hollywood` and `import HollywoodUI` as needed to your source files.
 
 ## What's Next?
 
