@@ -17,7 +17,7 @@ public final class ContextualActor<T: Sendable>: ObservableObject, Sendable {
         }
     }
 
-    private var backlog: [AnyWorkflowAction<T>]
+    private var backlog: [any WorkflowAction<T>]
 
     public init(initialValue: T? = nil) {
         self.state = initialValue.map { .success($0) } ?? .ready
@@ -60,7 +60,7 @@ extension ContextualActor {
     ///   given ``WorkflowAction`` for execution.
     ///
     ///   - SeeAlso: ``State-swift.enum`` for more information on expected state transitions.
-    public func execute(_ action: some WorkflowAction<T>, cancelIfBusy: Bool = false) {
+    public func execute(_ action: any WorkflowAction<T>, cancelIfBusy: Bool = false) {
         switch internalState {
         case .ready:
             doExecute(action, currentValue: nil)
@@ -69,7 +69,7 @@ extension ContextualActor {
                 cancel()
                 doExecute(action, currentValue: currentValue)
             } else {
-                backlog.append(AnyWorkflowAction(action))
+                backlog.append(action)
             }
         case .success(let currentValue):
             doExecute(action, currentValue: currentValue)
@@ -78,9 +78,9 @@ extension ContextualActor {
         }
     }
 
-    private func doExecute<C: WorkflowAction>(_ action: C, currentValue: T?) where C.T == T {
+    private func doExecute(_ action: any WorkflowAction<T>, currentValue: T?) {
         let identifier = UUID()
-        let executor = TaskExecutor(command: AnyWorkflowAction(action)) { [weak self] result in
+        let executor = TaskExecutor(command: action) { [weak self] result in
             self?.handleResult(result, identifier: identifier)
         }
 
@@ -177,7 +177,7 @@ extension ContextualActor {
 
     private enum InternalState {
         case ready
-        case busy(TaskExecutor<AnyWorkflowAction<T>>, UUID, T?)
+        case busy(TaskExecutor<T>, UUID, T?)
         case success(T)
         case failure(Error, T?)
     }

@@ -2,15 +2,14 @@ import Foundation
 
 /// An instance of this class executes a `WorkflowAction<T>` using a privately created `Task`.
 @MainActor
-final class TaskExecutor<C: WorkflowAction> {
+final class TaskExecutor<T: Sendable> {
 
     private var task: Task<Void, Error>?
 
-    init(command: C, completion: @MainActor @Sendable @escaping (Result<C.T, Error>) -> Void) {
+    init(command: some WorkflowAction<T>, completion: @MainActor @Sendable @escaping (Result<T, Error>) -> Void) {
         self.task = Task {
             do {
                 // Note: Execution is currently on the main queue.
-
                 // The main queue suspends here, while the command executes in the cooperative thread pool.
                 let result = try await command.execute()
 
