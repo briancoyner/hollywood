@@ -5,11 +5,11 @@ import Hollywood
 /// https://twitter.com/pathofshrines/status/1405976017525673984
 struct TimeoutAction: WorkflowAction {
 
-    let duration: Int
+    let duration: Duration
     let timeoutCallback: @Sendable () -> Void
 
     func execute() async throws {
-        try await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+        try await Task.sleep(for: duration)
         try Task.checkCancellation()
 
         timeoutCallback()

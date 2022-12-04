@@ -2,8 +2,6 @@ import XCTest
 
 import Hollywood
 
-struct SomeError: Error {}
-
 struct MockWorkflowAction<T: Sendable>: WorkflowAction, CustomDebugStringConvertible {
 
     enum State: Sendable {
@@ -44,7 +42,7 @@ extension MockWorkflowAction {
             try await waitForCancellationExpectation.wait()
             try Task.checkCancellation()
 
-            throw SomeError()
+            throw TimeOutError()
         }
     }
 }

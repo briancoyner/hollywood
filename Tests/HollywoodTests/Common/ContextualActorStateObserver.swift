@@ -35,7 +35,7 @@ final class ContextualActorStateObserver<T> where T: Sendable, T: Equatable {
 extension ContextualActorStateObserver {
 
     func verify(expectedStates: [ContextualActor<T>.State]) async throws {
-        try await semaphore.wait(forAtLeast: 3)
+        try await semaphore.wait(forAtLeast: .seconds(3))
 
         XCTAssertEqual(expectedStates, collected)
         collected.removeAll()
