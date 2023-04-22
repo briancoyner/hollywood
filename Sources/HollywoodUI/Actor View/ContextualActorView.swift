@@ -2,7 +2,7 @@ import SwiftUI
 
 import Hollywood
 
-public struct ContextualActorView<T, Content>: View where Content: View {
+public struct ContextualActorView<T, Content>: View where T: Sendable, Content: View {
 
     @ObservedObject
     var contextualActor: ContextualActor<T>
@@ -14,7 +14,6 @@ public struct ContextualActorView<T, Content>: View where Content: View {
         contextualActor: ContextualActor<T>,
         @ViewBuilder content: @escaping (ContextualActor<T>.State) -> Content
     ) {
-
         self.contextualActor = contextualActor
         self.content = content
     }

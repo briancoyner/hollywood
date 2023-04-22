@@ -7,7 +7,7 @@ struct MockWorkflowAction<T: Sendable>: WorkflowAction, CustomDebugStringConvert
     enum State: Sendable {
         case mockResult(T)
         case mockError(Error)
-        case mockCancellation(executingExpectation: Semaphore, waitForCancellationExpectation: Semaphore)
+        case mockCancellation(executingExpectation: XCTestExpectation, waitForCancellationExpectation: XCTestExpectation)
     }
 
     var description: String {
@@ -37,11 +37,12 @@ extension MockWorkflowAction {
         case .mockError(let error):
             throw error
         case .mockCancellation(let executingExpectation, let waitForCancellationExpectation):
-            executingExpectation.signal()
+            executingExpectation.fulfill()
 
-            try await waitForCancellationExpectation.wait()
+            await XCTWaiter().fulfillment(of: [waitForCancellationExpectation])
             try Task.checkCancellation()
 
+            XCTFail("Expected the parent task to be cancelled and a `\(CancellationError.self) to be thrown.")
             throw TimeOutError()
         }
     }

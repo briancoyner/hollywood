@@ -6,7 +6,7 @@ import Hollywood
 @MainActor
 final class ContextualActorStateObserver<T> where T: Sendable, T: Equatable {
 
-    let semaphore: Semaphore
+    let semaphore: XCTestExpectation
 
     private let statePublisher: Published<ContextualActor<T>.State>.Publisher
     private var observer: AnyCancellable?
@@ -18,7 +18,7 @@ final class ContextualActorStateObserver<T> where T: Sendable, T: Equatable {
         ignoreInitialState: Bool = false
     ) {
         self.statePublisher = statePublisher
-        self.semaphore = Semaphore()
+        self.semaphore = XCTestExpectation()
 
         self.observer = statePublisher
             .dropFirst(ignoreInitialState ? 1 : 0)
@@ -26,7 +26,7 @@ final class ContextualActorStateObserver<T> where T: Sendable, T: Equatable {
                 self?.collected.append(state)
 
                 if state == waitForState {
-                    semaphore.signal()
+                    semaphore.fulfill()
                 }
             }
     }
@@ -35,7 +35,7 @@ final class ContextualActorStateObserver<T> where T: Sendable, T: Equatable {
 extension ContextualActorStateObserver {
 
     func verify(expectedStates: [ContextualActor<T>.State]) async throws {
-        try await semaphore.wait(forAtLeast: .seconds(3))
+        await XCTWaiter().fulfillment(of: [semaphore], timeout: 3)
 
         XCTAssertEqual(expectedStates, collected)
         collected.removeAll()

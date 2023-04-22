@@ -182,8 +182,8 @@ extension ContextualActorTest {
             waitForState: .success(poisonPill)
         )
 
-        let executingExpectation = Semaphore()
-        let waitForCancellationExpectation = Semaphore()
+        let executingExpectation = XCTestExpectation()
+        let waitForCancellationExpectation = XCTestExpectation()
         let actionThatIsCancelled = MockWorkflowAction<String>(state: .mockCancellation(
             executingExpectation: executingExpectation,
             waitForCancellationExpectation: waitForCancellationExpectation
@@ -194,7 +194,7 @@ extension ContextualActorTest {
         // Suspend the test until the `actionThatIsCancelled` is executing.
         // At this point, the `actionThatIsCancelled` is now waiting for the test
         // to signal the `waitForCancellationExpectation` (see below).
-        try await executingExpectation.wait()
+        await fulfillment(of: [executingExpectation])
 
         XCTAssertEqual(.busy(nil), contextualActor.state)
         // Calling cancel immediately puts the contextual actor in the `.ready` state.
@@ -205,7 +205,7 @@ extension ContextualActorTest {
         // to continue executing. The `MockWorkflowAction` at this point checks the `Task`'s cancellation
         // state and should throw `CancellationError`. The contextual resource ignores the `CancellationError`
         // because the poison pill action is now the active workflow.
-        waitForCancellationExpectation.signal()
+        waitForCancellationExpectation.fulfill()
 
         // Now let's finalize the test by submitting a poison pill so that the state observer knows
         // when we are finished.
@@ -230,8 +230,8 @@ extension ContextualActorTest {
             waitForState: .success(poisonPill)
         )
 
-        let executingExpectation = Semaphore()
-        let waitForCancellationExpectation = Semaphore()
+        let executingExpectation = XCTestExpectation()
+        let waitForCancellationExpectation = XCTestExpectation()
         let actionThatIsCancelled = MockWorkflowAction<String>(state: .mockCancellation(
             executingExpectation: executingExpectation,
             waitForCancellationExpectation: waitForCancellationExpectation
@@ -242,7 +242,7 @@ extension ContextualActorTest {
         // Suspend the test until the `actionThatIsCancelled` is executing.
         // At this point, the `actionThatIsCancelled` is now waiting for the test
         // to signal the `waitForCancellationExpectation` (see below).
-        try await executingExpectation.wait()
+        await fulfillment(of: [executingExpectation])
 
         XCTAssertEqual(.busy(nil), contextualActor.state)
         contextualActor.cancel()
@@ -253,7 +253,7 @@ extension ContextualActorTest {
         // pill action is now the active workflow.
         contextualActor.execute(PoisonPillWorkflowAction(poisonPill: poisonPill))
 
-        waitForCancellationExpectation.signal()
+        waitForCancellationExpectation.fulfill()
 
         try await observer.verify(expectedStates: [
             .ready,
@@ -281,8 +281,8 @@ extension ContextualActorTest {
         // Note: This puts the contextual actor into the `.success("Brian")` state.
         contextualActor.execute(MockWorkflowAction(state: .mockResult("Brian")))
 
-        let executingExpectation = Semaphore()
-        let waitForCancellationExpectation = Semaphore()
+        let executingExpectation = XCTestExpectation()
+        let waitForCancellationExpectation = XCTestExpectation()
         let action = MockWorkflowAction<String>(state: .mockCancellation(
             executingExpectation: executingExpectation,
             waitForCancellationExpectation: waitForCancellationExpectation
@@ -290,13 +290,13 @@ extension ContextualActorTest {
         contextualActor.execute(action)
         contextualActor.execute(PoisonPillWorkflowAction(poisonPill: poisonPill))
 
-        try await executingExpectation.wait()
+        await fulfillment(of: [executingExpectation])
 
         XCTAssertEqual(.busy("Brian"), contextualActor.state)
         contextualActor.cancel()
         XCTAssertEqual(.ready, contextualActor.state)
 
-        waitForCancellationExpectation.signal()
+        waitForCancellationExpectation.fulfill()
 
         try await observer.verify(expectedStates: [
             .ready,
@@ -319,15 +319,15 @@ extension ContextualActorTest {
             waitForState: .success(poisonPill)
         )
 
-        let executingExpectation = Semaphore()
-        let waitForCancellationExpectation = Semaphore()
+        let executingExpectation = XCTestExpectation()
+        let waitForCancellationExpectation = XCTestExpectation()
         let action = MockWorkflowAction<String>(state: .mockCancellation(
             executingExpectation: executingExpectation,
             waitForCancellationExpectation: waitForCancellationExpectation
         ))
         contextualActor.execute(action)
 
-        try await executingExpectation.wait()
+        await fulfillment(of: [executingExpectation])
 
         // The current action is now executing.
         // Let's go ahead and enqueue a few workflow actions.
@@ -337,7 +337,7 @@ extension ContextualActorTest {
         contextualActor.execute(MockWorkflowAction(state: .mockResult("Pineapple")))
         contextualActor.execute(MockWorkflowAction(state: .mockResult("Banana")))
 
-        waitForCancellationExpectation.signal()
+        waitForCancellationExpectation.fulfill()
 
         contextualActor.execute(PoisonPillWorkflowAction(poisonPill: poisonPill))
 
@@ -475,15 +475,15 @@ extension ContextualActorTest {
             waitForState: .success(poisonPill)
         )
 
-        let executingExpectation = Semaphore()
-        let waitForCancellationExpectation = Semaphore()
+        let executingExpectation = XCTestExpectation()
+        let waitForCancellationExpectation = XCTestExpectation()
         let action = MockWorkflowAction<String>(state: .mockCancellation(
             executingExpectation: executingExpectation,
             waitForCancellationExpectation: waitForCancellationExpectation
         ))
         contextualActor.execute(action)
 
-        try await executingExpectation.wait()
+        await fulfillment(of: [executingExpectation])
 
         // The current action is now executing.
         // Let's go ahead and enqueue a few workflow actions.
@@ -496,7 +496,7 @@ extension ContextualActorTest {
         contextualActor.reset()
         XCTAssertEqual(.ready, contextualActor.state)
 
-        waitForCancellationExpectation.signal()
+        waitForCancellationExpectation.fulfill()
 
         contextualActor.execute(PoisonPillWorkflowAction(poisonPill: poisonPill))
 
