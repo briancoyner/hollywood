@@ -18,16 +18,17 @@ import Foundation
 ///
 ///         // We now have the authorization code, so let's march towards obtaining the OAuth tokens.
 ///         let clientSecret = try await execute(ObtainClientSecretWorkflowAction())
-///         let tokens = try await execute(ObtainTokensWorkflowAction(authorizationCode: authorizationCode, clientSecret: clientSecret)
+///         let tokens = try await execute(ObtainTokensWorkflowAction(
+///             authorizationCode: authorizationCode,
+///             clientSecret: clientSecret
+///         )
 ///         return try await execute(PersistTokensInKeychainWorkflowAction(tokens: tokens)
 ///     }
 /// }
 /// ```
 ///
-/// Of course, there's nothing stopping you from implementing the action as a non-`CompositeWorkflowAction`. But I think you'll agree that adopting the
-/// `CompositeWorkflowAction` helps document the action's intentions as a "composite", and simplifies the implementation by using the convenience
-/// ``execute(_:)`` method.
-/// ```
+/// Of course, there's nothing stopping you from implementing the action as a non-`CompositeWorkflowAction`. Basically, this API is an alternative to
+/// tossing async functions into case-less enums and/ or structs, or even as free functions.
 public protocol CompositeWorkflowAction: WorkflowAction {
 }
 

@@ -1,4 +1,3 @@
-import Combine
 import XCTest
 
 import Hollywood
@@ -8,27 +7,24 @@ final class ContextualActorStateObserver<T> where T: Sendable, T: Equatable {
 
     let semaphore: XCTestExpectation
 
-    private let statePublisher: Published<ContextualActor<T>.State>.Publisher
-    private var observer: AnyCancellable?
+    private let contextualActor: ContextualActor<T>
+    private let waitForState: ContextualActor<T>.State
     private var collected: [ContextualActor<T>.State] = []
 
     init(
-        statePublisher: Published<ContextualActor<T>.State>.Publisher,
+        contextualActor: ContextualActor<T>,
         waitForState: ContextualActor<T>.State,
         ignoreInitialState: Bool = false
     ) {
-        self.statePublisher = statePublisher
+        self.contextualActor = contextualActor
+        self.waitForState = waitForState
         self.semaphore = XCTestExpectation()
 
-        self.observer = statePublisher
-            .dropFirst(ignoreInitialState ? 1 : 0)
-            .sink { [weak self, semaphore] state in
-                self?.collected.append(state)
+        if !ignoreInitialState {
+            collected.append(contextualActor.state)
+        }
 
-                if state == waitForState {
-                    semaphore.fulfill()
-                }
-            }
+        observeNextStateChange()
     }
 }
 
@@ -39,5 +35,24 @@ extension ContextualActorStateObserver {
 
         XCTAssertEqual(expectedStates, collected)
         collected.removeAll()
+    }
+}
+
+extension ContextualActorStateObserver {
+
+    private func observeNextStateChange() {
+        withObservationTracking {
+            _ = contextualActor.state
+        } onChange: {
+            DispatchQueue.main.async { [self] in
+                collected.append(contextualActor.state)
+
+                if contextualActor.state == waitForState {
+                    semaphore.fulfill()
+                } else {
+                    observeNextStateChange()
+                }
+            }
+        }
     }
 }

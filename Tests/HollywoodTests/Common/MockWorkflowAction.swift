@@ -6,7 +6,7 @@ struct MockWorkflowAction<T: Sendable>: WorkflowAction, CustomDebugStringConvert
 
     enum State: Sendable {
         case mockResult(T)
-        case mockError(Error)
+        case mockError(any Error)
         case mockCancellation(executingExpectation: XCTestExpectation, waitForCancellationExpectation: XCTestExpectation)
     }
 

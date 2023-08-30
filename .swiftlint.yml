@@ -1,0 +1,5 @@
+disabled_rules:
+  - empty_enum_arguments
+  - line_length
+  - type_name # allow `T` generic type names
+  - file_length

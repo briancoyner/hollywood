@@ -7,12 +7,12 @@ There are two core APIs: `ContextualActor` and `WorkflowAction`.
 
 A `ContextualActor` asynchronously executes and publishes the result of a `WorkflowAction` that produces type `T`.
 A `ContextualActor` transitions between `ContextualActor/State`s (ready, busy, success, failure). The current
-state is available by reading/ observing the published `state` property. This makes it super easy to tie in with SwiftUI.
+state is available by reading/ observing the `state` property. This makes it super easy to tie in with SwiftUI.
 
 A `WorkflowAction` is a simple command (think GoF command) implementation that asynchronously executes to produce a value `T`.
-A good way to think about this protocol is that it forces you to give a discoverable name (via a concrete type) to an asynchronous
-function. For a large code base, with multiple developers contributing code, this helps with discoverability,
-maintenance, and just generally helps organize reusable functions.
+A good way to think about this protocol is that it forces you to give a discoverable name (via a concrete type) to a
+top-level asynchronous function. For a large code base, with multiple developers contributing code, this helps with 
+discoverability, maintenance, and just generally helps organize top-level reusable functions.
 
 ![GeneralDiagram](GeneralDiagram.png)
 

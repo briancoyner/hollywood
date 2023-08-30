@@ -1,4 +1,4 @@
-// swift-tools-version: 5.8
+// swift-tools-version: 5.9
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -6,8 +6,8 @@ import PackageDescription
 let package = Package(
     name: "Hollywood",
     platforms: [
-        .iOS(.v16),
-        .macOS(.v12)
+        .iOS(.v17),
+        .macOS(.v14)
     ],
     products: [
         .library(
@@ -15,44 +15,22 @@ let package = Package(
             targets: [
                 "Hollywood"
             ]
-        ),
-        .library(
-            name: "HollywoodUI",
-            targets: [
-                "HollywoodUI"
-            ]
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-async-algorithms", branch: "main"),
-        .package(url: "https://github.com/apple/swift-algorithms", branch: "main"),
-        .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0")
+        .package(url: "https://github.com/apple/swift-docc-plugin", exact: "1.3.0")
     ],
     targets: [
         .target(
             name: "Hollywood",
             dependencies: [
-                .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
-                .product(name: "Algorithms", package: "swift-algorithms")
+                // None
             ],
             swiftSettings: [
-                .enableUpcomingFeature("StrictConcurrency"),
-                .unsafeFlags([
-                    "-warnings-as-errors",
-                    "-strict-concurrency=complete"
-                ])
-            ]
-        ),
-        .target(
-            name: "HollywoodUI",
-            dependencies: [
-                "Hollywood"
-            ],
-            swiftSettings: [
-                .unsafeFlags([
-                    "-warnings-as-errors",
-                    "-strict-concurrency=complete"
-                ])
+                .strictConcurrency,
+                .existentialAny,
+                .forwardTrailingClosure,
+                .treatWarningsAsErrors
             ]
         ),
         .testTarget(
@@ -61,11 +39,34 @@ let package = Package(
                 "Hollywood"
             ],
             swiftSettings: [
-                .unsafeFlags([
-                    "-warnings-as-errors",
-                    "-strict-concurrency=complete"
-                ])
+                .strictConcurrency,
+                .existentialAny,
+                .forwardTrailingClosure,
+                .treatWarningsAsErrors
             ]
         )
     ]
 )
+
+// MARK: - Swift Settings
+
+extension SwiftSetting {
+
+    static var existentialAny: SwiftSetting {
+        return .enableUpcomingFeature("ExistentialAny")
+    }
+
+    static var forwardTrailingClosure: SwiftSetting {
+        return .enableUpcomingFeature("ForwardTrailingClosure")
+    }
+
+    static var strictConcurrency: SwiftSetting {
+        return .enableExperimentalFeature("StrictConcurrency=complete")
+    }
+
+    static var treatWarningsAsErrors: SwiftSetting {
+        // This will need to be removed once we an official `tag` is created because
+        // SwiftPM doesn't allow tagged releases to include unsafe flags. 
+        .unsafeFlags(["-warnings-as-errors"])
+    }
+}

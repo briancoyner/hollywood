@@ -33,7 +33,7 @@ extension ContextualActor {
         /// A ``ContextualActor`` may transition from the ``failure(_:_:)`` to one of the following states:
         ///
         /// - ``busy(_:)``when the workflow begins asynchronous execution.
-        case failure(Error, T?)
+        case failure(any Error, T?)
     }
 }
 

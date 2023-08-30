@@ -1,16 +1,15 @@
 import Foundation
 import SwiftUI
-import AsyncAlgorithms
 
 /// A `ContextualActor` asynchronously executes and publishes the result of a ``WorkflowAction``.
 /// A `ContextualActor` transitions between ``ContextualActor/State-swift.enum``s. The current
 /// state is available by reading/ observing the  ``state-swift.property``.
-@MainActor
-public final class ContextualActor<T: Sendable>: ObservableObject, Sendable {
+@Observable @MainActor
+public final class ContextualActor<T: Sendable>: Sendable {
 
-    @Published
     public private(set) var state: State = .ready
 
+    @ObservationIgnored
     private var internalState: InternalState = .ready {
         didSet {
             state = map(internalState)
@@ -25,13 +24,13 @@ public final class ContextualActor<T: Sendable>: ObservableObject, Sendable {
         self.backlog = []
     }
 
-    public init(initialError: Error, initialValue: T? = nil) {
+    public init(initialError: any Error, initialValue: T? = nil) {
         self.state = .failure(initialError, initialValue)
         self.backlog = []
     }
 }
 
-// MARK: Execute
+// MARK: - Execute
 
 extension ContextualActor {
 
@@ -51,8 +50,6 @@ extension ContextualActor {
     ///
     /// It's important to understand that upon execution of the enqueued action, `state` immediately transitions to `.busy(previousResult)` and
     /// passes along the previous action's result value.
-    ///
-    /// It's also important to understand that it's not currently possible to cancel an enqueued ``WorkflowAction`` without
     ///
     /// - Parameters:
     ///   - action: The ``WorkflowAction`` to asynchronously execute.
@@ -80,15 +77,20 @@ extension ContextualActor {
 
     private func doExecute(_ action: any WorkflowAction<T>, currentValue: T?) {
         let identifier = UUID()
-        let executor = TaskExecutor(command: action) { [weak self] result in
+        let executor = WorkflowActionExecutor(command: action) { [weak self] result in
             self?.handleResult(result, identifier: identifier)
         }
 
+        // The executor is retained by the "busy" state for the duration of the async work.
+        // This state transition must happen before the async work begins in order for the
+        // the "busy" state change to be published/ observed. 
         internalState = .busy(executor, identifier, currentValue)
+
+        executor.start()
     }
 }
 
-// MARK: Cancel
+// MARK: - Cancel
 
 extension ContextualActor {
 
@@ -99,7 +101,7 @@ extension ContextualActor {
     ///
     /// This method has no effect if:
     /// - The ``ContextualActor/State-swift.enum`` is not ``State-swift.enum/busy(_:)`` at the time of the cancellation request.
-    /// - The ``WorkflowActon`` (or its sub-actions) do not support cancellation or have passed the point of no return. In this case
+    /// - The ``WorkflowAction`` (or its sub-actions) do not support cancellation or have passed the point of no return. In this case
     /// a workflow eventually succeeds or fails (assuming the `WorkflowAction` is properly implemented to make forward progress).
     public func cancel() {
         if case .busy(let task, _, _) = internalState {
@@ -110,7 +112,7 @@ extension ContextualActor {
     }
 }
 
-// MARK: Reset
+// MARK: - Reset
 
 extension ContextualActor {
 
@@ -143,7 +145,7 @@ extension ContextualActor {
 
 extension ContextualActor {
 
-    private func handleResult(_ result: Result<T, Error>, identifier: UUID) {
+    private func handleResult(_ result: Result<T, any Error>, identifier: UUID) {
         switch internalState {
         case .ready:
             executeFromBacklog()
@@ -177,9 +179,9 @@ extension ContextualActor {
 
     private enum InternalState {
         case ready
-        case busy(TaskExecutor<T>, UUID, T?)
+        case busy(WorkflowActionExecutor<T>, UUID, T?)
         case success(T)
-        case failure(Error, T?)
+        case failure(any Error, T?)
     }
 
     private func map(_ internalState: InternalState) -> State {

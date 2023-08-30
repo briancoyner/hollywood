@@ -1,5 +1,4 @@
 import XCTest
-import AsyncAlgorithms
 
 import Hollywood
 
@@ -15,7 +14,7 @@ extension ContextualActorTest {
     }
 }
 
-// MARK: Initializer/ Initial State Tests
+// MARK: - Initializer/ Initial State Tests
 
 extension ContextualActorTest {
 
@@ -59,7 +58,7 @@ extension ContextualActorTest {
     }
 }
 
-// MARK: Success Tests
+// MARK: - Success Tests
 
 extension ContextualActorTest {
 
@@ -67,21 +66,18 @@ extension ContextualActorTest {
     func testExecuteActionThatReturnsAValue_VerifyStateTransitionsToBusy_ThenToSuccessWithTheReturnValue() async throws {
         let contextualActor = ContextualActor<String>()
 
-        let poisonPill = "PoisonPill"
+        let value = "Brian"
         let observer = ContextualActorStateObserver(
-            statePublisher: contextualActor.$state,
-            waitForState: .success(poisonPill)
+            contextualActor: contextualActor,
+            waitForState: .success(value)
         )
 
         contextualActor.execute(MockWorkflowAction(state: .mockResult("Brian")))
-        contextualActor.execute(PoisonPillWorkflowAction(poisonPill: poisonPill))
 
         try await observer.verify(expectedStates: [
             .ready,
             .busy(nil),
-            .success("Brian"),
-            .busy("Brian"),
-            .success(poisonPill)
+            .success("Brian")
         ])
     }
 
@@ -91,7 +87,7 @@ extension ContextualActorTest {
 
         let poisonPill = "PoisonPill"
         let observer = ContextualActorStateObserver(
-            statePublisher: contextualActor.$state,
+            contextualActor: contextualActor,
             waitForState: .success(poisonPill)
         )
 
@@ -103,11 +99,8 @@ extension ContextualActorTest {
         try await observer.verify(expectedStates: [
             .ready,
             .busy(nil),
-            .success("Brian"),
             .busy("Brian"),
-            .success("Coyner"),
             .busy("Coyner"),
-            .success("Was Here"),
             .busy("Was Here"),
             .success(poisonPill)
         ])
@@ -119,7 +112,7 @@ extension ContextualActorTest {
 
         let poisonPill = "PoisonPill"
         let observer = ContextualActorStateObserver(
-            statePublisher: contextualActor.$state,
+            contextualActor: contextualActor,
             waitForState: .success(poisonPill)
         )
 
@@ -135,7 +128,6 @@ extension ContextualActorTest {
 
         for index in 1..<count {
             let value = index.formatted()
-            expectedStates.append(.success(value))
             expectedStates.append(.busy(value))
         }
 
@@ -145,7 +137,7 @@ extension ContextualActorTest {
     }
 }
 
-// MARK: Cancellation Tests
+// MARK: - Cancellation Tests
 
 extension ContextualActorTest {
 
@@ -155,7 +147,7 @@ extension ContextualActorTest {
 
         let poisonPill = "PoisonPill"
         let observer = ContextualActorStateObserver(
-            statePublisher: contextualActor.$state,
+            contextualActor: contextualActor,
             waitForState: .success(poisonPill)
         )
 
@@ -178,7 +170,7 @@ extension ContextualActorTest {
 
         let poisonPill = "PoisonPill"
         let observer = ContextualActorStateObserver(
-            statePublisher: contextualActor.$state,
+            contextualActor: contextualActor,
             waitForState: .success(poisonPill)
         )
 
@@ -214,7 +206,10 @@ extension ContextualActorTest {
         try await observer.verify(expectedStates: [
             .ready,
             .busy(nil),
-            .ready, // This is caused by the `ContextualActor.cancel` call.
+            // Internally, the ContextualResource transitions to the `.ready` state, but due to how the
+            // @Observable macro works with the `withObservationTracking(apply:onChange:)` function, only the
+            // last state at the end of the main run loop is observed.
+            // .ready,
             .busy(nil),
             .success(poisonPill)
         ])
@@ -226,7 +221,7 @@ extension ContextualActorTest {
 
         let poisonPill = "PoisonPill"
         let observer = ContextualActorStateObserver(
-            statePublisher: contextualActor.$state,
+            contextualActor: contextualActor,
             waitForState: .success(poisonPill)
         )
 
@@ -258,7 +253,10 @@ extension ContextualActorTest {
         try await observer.verify(expectedStates: [
             .ready,
             .busy(nil),
-            .ready, // This is caused by the `ContextualActor.cancel` call.
+            // Internally, the ContextualResource transitions to the `.ready` state, but due to how the
+            // @Observable macro works with the `withObservationTracking(apply:onChange:)` function, only the
+            // last state at the end of the main run loop is observed.
+            // .ready,
             .busy(nil),
             .success(poisonPill)
         ])
@@ -274,7 +272,7 @@ extension ContextualActorTest {
 
         let poisonPill = "PoisonPill"
         let observer = ContextualActorStateObserver(
-            statePublisher: contextualActor.$state,
+            contextualActor: contextualActor,
             waitForState: .success(poisonPill)
         )
 
@@ -301,7 +299,6 @@ extension ContextualActorTest {
         try await observer.verify(expectedStates: [
             .ready,
             .busy(nil),
-            .success("Brian"),
             .busy("Brian"),
             .ready,
             .busy(nil),
@@ -315,7 +312,7 @@ extension ContextualActorTest {
 
         let poisonPill = "PoisonPill"
         let observer = ContextualActorStateObserver(
-            statePublisher: contextualActor.$state,
+            contextualActor: contextualActor,
             waitForState: .success(poisonPill)
         )
 
@@ -341,26 +338,20 @@ extension ContextualActorTest {
 
         contextualActor.execute(PoisonPillWorkflowAction(poisonPill: poisonPill))
 
-//        Ready, Busy: nil, Ready, Busy: nil, Success: Apple, Busy: Optional("Apple"), Ready, Busy: Optional("Apple"), Ready, Busy: Optional("Apple"), Success: PoisonPill]")
         try await observer.verify(expectedStates: [
             .ready,
             .busy(nil),
-            .ready,
             .busy(nil),
-            .success("Apple"),
             .busy("Apple"),
-            .success("Orange"),
             .busy("Orange"),
-            .success("Pineapple"),
             .busy("Pineapple"),
-            .success("Banana"),
             .busy("Banana"),
             .success(poisonPill)
         ])
     }
 }
 
-// MARK: Errors
+// MARK: - Errors
 
 extension ContextualActorTest {
 
@@ -368,27 +359,23 @@ extension ContextualActorTest {
     func testExecuteActionThatThrowsAnError_VerifyErrorIsCaptured() async throws {
         let contextualActor = ContextualActor<String>(initialValue: "Brian")
 
-        let poisonPill = "PoisonPill"
+        let error = MockError()
         let observer = ContextualActorStateObserver(
-            statePublisher: contextualActor.$state,
-            waitForState: .success(poisonPill)
+            contextualActor: contextualActor,
+            waitForState: .failure(error, "Brian")
         )
 
-        let error = MockError()
         contextualActor.execute(MockWorkflowAction(state: .mockError(error)))
-        contextualActor.execute(PoisonPillWorkflowAction(poisonPill: poisonPill))
 
         try await observer.verify(expectedStates: [
             .success("Brian"),
             .busy("Brian"),
-            .failure(error, "Brian"),
-            .busy("Brian"),
-            .success(poisonPill)
+            .failure(error, "Brian")
         ])
     }
 }
 
-// MARK: Reset
+// MARK: - Reset
 
 extension ContextualActorTest {
 
@@ -398,7 +385,7 @@ extension ContextualActorTest {
 
         let poisonPill = "PoisonPill"
         let observer = ContextualActorStateObserver(
-            statePublisher: contextualActor.$state,
+            contextualActor: contextualActor,
             waitForState: .success(poisonPill)
         )
 
@@ -426,17 +413,16 @@ extension ContextualActorTest {
 
         let poisonPill = "PoisonPill"
         let observer = ContextualActorStateObserver(
-            statePublisher: contextualActor.$state,
-            waitForState: .success(poisonPill),
-            ignoreInitialState: true
+            contextualActor: contextualActor,
+            waitForState: .success(poisonPill)
         )
 
         contextualActor.reset()
         contextualActor.execute(PoisonPillWorkflowAction(poisonPill: poisonPill))
 
         try await observer.verify(expectedStates: [
-            .ready,
-            .busy(nil),
+            .success("Brian"), // This is the initial state.
+            .busy(nil), // The reset cleared the "Brian" result.
             .success(poisonPill)
         ])
     }
@@ -448,18 +434,26 @@ extension ContextualActorTest {
         let error = MockError()
         try await transition(contextualActor: contextualActor, toError: error)
 
-        let poisonPill = "PoisonPill"
-        let observer = ContextualActorStateObserver(
-            statePublisher: contextualActor.$state,
-            waitForState: .success(poisonPill),
+        let resetObserver = ContextualActorStateObserver(
+            contextualActor: contextualActor,
+            waitForState: .ready,
             ignoreInitialState: true
         )
 
         contextualActor.reset()
+        try await resetObserver.verify(expectedStates: [
+            .ready
+        ])
+
+        let poisonPill = "PoisonPill"
+        let executionObserver = ContextualActorStateObserver(
+            contextualActor: contextualActor,
+            waitForState: .success(poisonPill),
+            ignoreInitialState: true
+        )
         contextualActor.execute(PoisonPillWorkflowAction(poisonPill: poisonPill))
 
-        try await observer.verify(expectedStates: [
-            .ready,
+        try await executionObserver.verify(expectedStates: [
             .busy(nil),
             .success(poisonPill)
         ])
@@ -471,7 +465,7 @@ extension ContextualActorTest {
 
         let poisonPill = "PoisonPill"
         let observer = ContextualActorStateObserver(
-            statePublisher: contextualActor.$state,
+            contextualActor: contextualActor,
             waitForState: .success(poisonPill)
         )
 
@@ -503,7 +497,6 @@ extension ContextualActorTest {
         try await observer.verify(expectedStates: [
             .ready,
             .busy(nil),
-            .ready,
             .busy(nil),
             .success(poisonPill)
         ])
@@ -522,7 +515,7 @@ extension ContextualActorTest {
         let currentValue = initialBusyStateValue(basedOn: contextualActor.state)
 
         let observer = ContextualActorStateObserver(
-            statePublisher: contextualActor.$state,
+            contextualActor: contextualActor,
             waitForState: .success(value)
         )
 
@@ -536,13 +529,13 @@ extension ContextualActorTest {
     }
 
     @MainActor
-    private func transition(contextualActor: ContextualActor<String>, toError error: Error) async throws {
+    private func transition(contextualActor: ContextualActor<String>, toError error: any Error) async throws {
 
         let initialState = contextualActor.state
         let currentValue = initialBusyStateValue(basedOn: contextualActor.state)
 
         let observer = ContextualActorStateObserver(
-            statePublisher: contextualActor.$state,
+            contextualActor: contextualActor,
             waitForState: .failure(error, currentValue)
         )
 

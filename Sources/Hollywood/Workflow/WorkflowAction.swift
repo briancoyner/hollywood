@@ -30,7 +30,7 @@ public protocol WorkflowAction<T>: Sendable {
 
     associatedtype T: Sendable
 
-    /// Implementations should throw a ``CancellationError`` if the workflow action cancels. `Task.checkCancellation()`,
+    /// Implementations should throw a `CancellationError` if the workflow action cancels. `Task.checkCancellation()`,
     /// 
     /// - Returns: `T` upon success.
     /// - Throws: `CancellationError` if the workflow action cancels
