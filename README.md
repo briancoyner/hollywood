@@ -145,8 +145,7 @@ There are numerous unit tests showing how to use the API, as well as showing tec
 workflows. A **HollywoodTestKit** is in the works 
 
 ## Requirements
-- iOS 16+ (yep, it's leaning on new Swift 5.7 beta features)
-- macOS 12+
+- Swift 5.9+
 
 ## Adding Hollywood as a Dependency
 
