@@ -26,114 +26,6 @@ Example workflows that require tracking state changes:
 - Performing SQLite database reads and writes.
 - Long running computations. 
 
-The **HollywoodUI** library provides a SwiftUI `View` named `ContextualActorView` that provides a consistent way to build
-views that respond to `ContextualActor` state changes. 
-
-Let's look at an example showing how to asynchronously search the [iTunes web service](https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/Searching.html#//apple_ref/doc/uid/TP40017632-CH5-SW1) 
-and display the search results in a simple list view.
-
-```swift
-import Hollywood
-
-struct SearchMusicStoreWorkflowAction: WorkflowAction {
-
-    let searchTerm: String
-
-    func execute() async throws -> SearchResults {
-        let encoded = searchTerm.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
-        let url = URL(string: "https://itunes.apple.com/search?term=\(encoded)")!
-
-        let request = URLRequest(url: url)
-        let (data, _) = try await URLSession.shared.data(for: request)
-
-        // TODO: Implement proper response handling.
-
-        let decoder = JSONDecoder()
-        return try decoder.decode(SearchResults.self, from: data)
-    }
-}
-
-struct SearchResults: Decodable {
-    let results: [SearchResult]
-}
-
-struct SearchResult: Decodable, Hashable {
-
-    let artistName: String
-    let artworkUrl100: String
-    let trackCensoredName: String
-}
-```
-
-Now let's integrate the `ContextualActor<SearchResults>` with the HollywoodUI `ContextualActorView`. 
-
-```swift
-import SwiftUI
-
-import Hollywood
-import HollywoodUI
-
-struct SearchView: View {
-
-    @StateObject
-    private var contextualActor = ContextualActor<SearchResults>()
-
-    @StateObject
-    private var debounced = Debounced<String>(input: "", delay: .milliseconds(400))
-}
-
-extension SearchView {
-
-    var body: some View {
-        ContextualActorView(contextualActor: contextualActor) { (state: ContextualActor.State) in
-            SearchResultListView(results: results(for: state))
-                .searchable(text: $debounced.input, placement: .automatic, prompt: "Search")
-                .task(id: debounced.output, priority: .userInitiated, {
-                    contextualActor.execute(SearchMusicStoreWorkflowAction(searchTerm: debounced.output))
-                })
-        }
-        .navigationTitle("Music Search")
-    }
-}
-
-extension SearchView {
-
-    private func results(for state: ContextualActor<SearchResults>.State) -> [SearchResult] {
-        switch state {
-        case .ready:
-            return []
-        case .busy:
-            return []
-        case .success(let results):
-            return results.results
-        case .failure(_, _):
-            return []
-        }
-    }
-}
-
-struct SearchResultListView: View {
-
-    let results: [SearchResult]
-
-    var body: some View {
-        List {
-            ForEach(results, id: \.self) { result in
-                VStack(alignment: .leading) {
-                    Text(result.artistName)
-                        .font(.headline)
-
-                    Text(result.trackCensoredName)
-                        .font(.subheadline)
-                }
-            }
-        }
-        .listStyle(.plain)
-    }
-}
-
-```
-
 ## Hollywood Demos
 
 The [Hollywood-Demos](https://github.com/briancoyner/hollywood-demos) repo contains several working examples (including the example above). Additional examples will be added in the future. 
@@ -146,6 +38,8 @@ workflows. A **HollywoodTestKit** is in the works
 
 ## Requirements
 - Swift 5.9+
+- iOS 17+
+- macOS 14+
 
 ## Adding Hollywood as a Dependency
 
@@ -161,12 +55,11 @@ To use the Hollywood and HollywoodUI libraries in a SwiftPM project, add the fol
 
 ```
 .target(name: "<target>", dependencies: [
-     .product(name: "Hollywood", package: "hollywood"),
-     .product(name: "HollywoodUI", package: "hollywood")
+     .product(name: "Hollywood", package: "hollywood")
 ]),
 ```
 
-Finally, add `import Hollywood` and `import HollywoodUI` as needed to your source files.
+Finally, add `import Hollywood` as needed to your source files.
 
 ## What's Next?
 

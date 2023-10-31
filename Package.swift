@@ -29,8 +29,7 @@ let package = Package(
             swiftSettings: [
                 .strictConcurrency,
                 .existentialAny,
-                .forwardTrailingClosure,
-                .treatWarningsAsErrors
+                .forwardTrailingClosure
             ]
         ),
         .testTarget(
@@ -41,8 +40,7 @@ let package = Package(
             swiftSettings: [
                 .strictConcurrency,
                 .existentialAny,
-                .forwardTrailingClosure,
-                .treatWarningsAsErrors
+                .forwardTrailingClosure
             ]
         )
     ]
@@ -62,11 +60,5 @@ extension SwiftSetting {
 
     static var strictConcurrency: SwiftSetting {
         return .enableExperimentalFeature("StrictConcurrency=complete")
-    }
-
-    static var treatWarningsAsErrors: SwiftSetting {
-        // This will need to be removed once we an official `tag` is created because
-        // SwiftPM doesn't allow tagged releases to include unsafe flags. 
-        .unsafeFlags(["-warnings-as-errors"])
     }
 }

@@ -22,6 +22,7 @@ extension ContextualActorTest {
     func testDefaultInitializer_InitialStateIsReady() throws {
         let contextualActor = ContextualActor<String>()
         XCTAssertEqual(.ready, contextualActor.state)
+        XCTAssertFalse(contextualActor.isBusy)
     }
 
     @MainActor
@@ -30,6 +31,7 @@ extension ContextualActorTest {
         let contextualActor = ContextualActor<String>(initialValue: value)
 
         XCTAssertEqual(.success(value), contextualActor.state)
+        XCTAssertFalse(contextualActor.isBusy)
     }
 
     @MainActor
@@ -38,6 +40,7 @@ extension ContextualActorTest {
         let contextualActor = ContextualActor<String>(initialError: error)
 
         XCTAssertEqual(.failure(error, nil), contextualActor.state)
+        XCTAssertFalse(contextualActor.isBusy)
     }
 
     @MainActor
@@ -46,6 +49,7 @@ extension ContextualActorTest {
         let contextualActor = ContextualActor<String>(initialError: error, initialValue: nil)
 
         XCTAssertEqual(.failure(error, nil), contextualActor.state)
+        XCTAssertFalse(contextualActor.isBusy)
     }
 
     @MainActor
@@ -55,6 +59,7 @@ extension ContextualActorTest {
         let contextualActor = ContextualActor<String>(initialError: error, initialValue: value)
 
         XCTAssertEqual(.failure(error, value), contextualActor.state)
+        XCTAssertFalse(contextualActor.isBusy)
     }
 }
 
@@ -520,6 +525,8 @@ extension ContextualActorTest {
         )
 
         contextualActor.execute(MockWorkflowAction(state: .mockResult(value)))
+
+        XCTAssertTrue(contextualActor.isBusy)
 
         try await observer.verify(expectedStates: [
             initialState,
