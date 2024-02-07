@@ -34,7 +34,7 @@ The [Hollywood-Demos](https://github.com/briancoyner/hollywood-demos) repo conta
 ## Unit Tests
 
 There are numerous unit tests showing how to use the API, as well as showing techniques for unit testing asynchronous
-workflows. A **HollywoodTestKit** is in the works 
+workflows. 
 
 ## Requirements
 - Swift 5.9+
@@ -43,11 +43,7 @@ workflows. A **HollywoodTestKit** is in the works
 
 ## Adding Hollywood as a Dependency
 
-To use the `Hollywood` and `HollywoodUI` libraries in a SwiftPM project, add the following to your `Package.swift` file:
-
-Adding Hollywood as a Dependency
-
-To use the Hollywood and HollywoodUI libraries in a SwiftPM project, add the following to your Package.swift file:
+To use the `Hollywood` library in a SwiftPM project simply add the following to your `Package.swift` file:
 
 ```
 .package(url: "https://github.com/briancoyner/hollywood.git", branch: "main"),

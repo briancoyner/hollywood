@@ -12,6 +12,10 @@ final class WorkflowActionExecutor<T: Sendable> {
         self.workflowAction = command
         self.completion = completion
     }
+
+    deinit {
+        task?.cancel()
+    }
 }
 
 extension WorkflowActionExecutor {
@@ -19,7 +23,7 @@ extension WorkflowActionExecutor {
     func start() {
         precondition(task == nil, "Programmer Error! Calling `start` multiple times is not supported.")
 
-        task = Task {
+        task = Task { [workflowAction, completion] in
             do {
                 // Note: Execution is currently on the main queue.
                 // The main queue suspends here, while the command executes in the cooperative thread pool.
