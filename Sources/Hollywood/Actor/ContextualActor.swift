@@ -77,7 +77,7 @@ extension ContextualActor {
 
     private func doExecute(_ action: any WorkflowAction<T>, currentValue: T?) {
         let identifier = UUID()
-        let executor = WorkflowActionExecutor(command: action) { [weak self] result in
+        let executor = WorkflowActionExecutor(action: action) { [weak self] result in
             self?.handleResult(result, identifier: identifier)
         }
 

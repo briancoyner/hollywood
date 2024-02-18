@@ -13,7 +13,7 @@ extension WorkflowActionTest {
     func testDeinitAutomaticallyCancelsItsUnderlyingTask() async throws {
         let executingExpectation = XCTestExpectation()
         let waitForCancellationExpectation = XCTestExpectation()
-        let command = MockWorkflowAction<String>(state: .mockCancellation(
+        let action = MockWorkflowAction<String>(state: .mockCancellation(
             executingExpectation: executingExpectation,
             waitForCancellationExpectation: waitForCancellationExpectation)
         )
@@ -21,7 +21,7 @@ extension WorkflowActionTest {
         let waitForResult = XCTestExpectation()
 
         var capturedResult: Result<String, any Error>? = nil
-        var executor: WorkflowActionExecutor? = WorkflowActionExecutor(command: command) { result in
+        var executor: WorkflowActionExecutor? = WorkflowActionExecutor(action: action) { result in
             // The executor's callback always executes even if the executor is destroyed.
             capturedResult = result
 
@@ -29,7 +29,7 @@ extension WorkflowActionTest {
             waitForResult.fulfill()
         }
 
-        // Everything is set up. Let's start the async execution of the command and wait for the
+        // Everything is set up. Let's start the async execution of the action and wait for the
         // result to be captured. The expected result should be a `CancellationError` initiated
         // when the `executor` reference is set to `nil`, which causes the executor's `deinit`
         // method to execute, which then cancels the underlying `Task`.

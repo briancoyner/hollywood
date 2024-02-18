@@ -8,8 +8,8 @@ final class WorkflowActionExecutor<T: Sendable> {
     private let completion: (Result<T, any Error>) -> Void
     private var task: Task<Void, any Error>?
 
-    init(command: any WorkflowAction<T>, completion: @MainActor @Sendable @escaping (Result<T, any Error>) -> Void) {
-        self.workflowAction = command
+    init(action: any WorkflowAction<T>, completion: @MainActor @Sendable @escaping (Result<T, any Error>) -> Void) {
+        self.workflowAction = action
         self.completion = completion
     }
 
@@ -26,7 +26,7 @@ extension WorkflowActionExecutor {
         task = Task { [workflowAction, completion] in
             do {
                 // Note: Execution is currently on the main queue.
-                // The main queue suspends here, while the command executes in the cooperative thread pool.
+                // The main queue suspends here, while the action executes in the cooperative thread pool.
                 let result = try await workflowAction.execute()
 
                 // Execution is now back on the main queue. So it's safe to synchronously execute
