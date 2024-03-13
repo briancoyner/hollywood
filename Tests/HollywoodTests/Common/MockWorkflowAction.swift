@@ -4,8 +4,13 @@ import Hollywood
 
 struct MockWorkflowAction<T: Sendable>: WorkflowAction, CustomDebugStringConvertible {
 
+    struct ProgressContext {
+        let totalUnitCount: Int64
+        let completedUnitCount: Int64
+    }
+
     enum State: Sendable {
-        case mockResult(T)
+        case mockResult(T, ProgressContext? = nil)
         case mockError(any Error)
         case mockCancellation(executingExpectation: XCTestExpectation, waitForCancellationExpectation: XCTestExpectation)
     }
@@ -16,8 +21,8 @@ struct MockWorkflowAction<T: Sendable>: WorkflowAction, CustomDebugStringConvert
 
     var debugDescription: String {
         switch state {
-        case .mockResult(let value):
-            return "MockResult: \(value)"
+        case .mockResult(let value, let progressContext):
+            return "MockResult: \(value); Progress Context: \(String(describing: progressContext))"
         case .mockError(let error):
             return "MockError: \(error)"
         case .mockCancellation:
@@ -32,7 +37,15 @@ extension MockWorkflowAction {
 
     func execute() async throws -> T {
         switch state {
-        case .mockResult(let result):
+        case .mockResult(let result, let progressContext):
+            if let progressContext {
+                // Any action executing in the context of a `ContextualActor` may ask for a Task-local
+                // `Progress` object via the `TaskProgress/progress` property.
+                let progress = TaskProgress.progress
+                progress.totalUnitCount = progressContext.totalUnitCount
+                progress.completedUnitCount = progressContext.completedUnitCount
+            }
+
             return result
         case .mockError(let error):
             throw error

@@ -37,10 +37,10 @@ extension ContextualActor {
     /// Submits a ``WorkflowAction`` for asynchronous execution.
     ///
     /// Passing `true` for the `cancelIfBusy` parameter performs the following logic:
-    /// - If the current state is ``State-swift.enum/busy(_:)``, then
+    /// - If the current state is ``State-swift.enum/busy(_:_:)``, then
     ///   - Cancel the executing ``WorkflowAction`` , which calls `cancel` on the internally owned detached `Task`.
     ///   - Immediately transition to the ``State-swift.enum/ready`` state.
-    ///   - Submit the given ``WorkflowAction`` for asynchronous execution, which transitions to the ``State-swift.enum/busy(_:)`` state.
+    ///   - Submit the given ``WorkflowAction`` for asynchronous execution, which transitions to the ``State-swift.enum/busy(_:_:)`` state.
     ///
     /// It's important to understand that even though the current workflow action is cancelled, it's possible the workflow action still produces
     /// a result. In this case, the result is dropped on the floor by the ``ContextualActor``.
@@ -61,7 +61,7 @@ extension ContextualActor {
         switch internalState {
         case .ready:
             doExecute(action, currentValue: nil)
-        case .busy(_, _, let currentValue):
+        case .busy(_, _, let currentValue, _):
             if cancelIfBusy {
                 cancel()
                 doExecute(action, currentValue: currentValue)
@@ -83,10 +83,11 @@ extension ContextualActor {
 
         // The executor is retained by the "busy" state for the duration of the async work.
         // This state transition must happen before the async work begins in order for the
-        // the "busy" state change to be published/ observed. 
-        internalState = .busy(executor, identifier, currentValue)
+        // the "busy" state change to be published/ observed.
+        let rootProgress = Progress()
+        internalState = .busy(executor, identifier, currentValue, rootProgress)
 
-        executor.start()
+        executor.start(with: rootProgress)
     }
 }
 
@@ -100,11 +101,11 @@ extension ContextualActor {
     /// - A ``WorkflowAction`` (or its sub-actions) should support cancellation by checking if the workflow has been cancelled at opportune times.
     ///
     /// This method has no effect if:
-    /// - The ``ContextualActor/State-swift.enum`` is not ``State-swift.enum/busy(_:)`` at the time of the cancellation request.
+    /// - The ``ContextualActor/State-swift.enum`` is not ``State-swift.enum/busy(_:_:)`` at the time of the cancellation request.
     /// - The ``WorkflowAction`` (or its sub-actions) do not support cancellation or have passed the point of no return. In this case
     /// a workflow eventually succeeds or fails (assuming the `WorkflowAction` is properly implemented to make forward progress).
     public func cancel() {
-        if case .busy(let task, _, _) = internalState {
+        if case .busy(let task, _, _, _) = internalState {
             task.cancel()
 
             internalState = .ready
@@ -149,7 +150,7 @@ extension ContextualActor {
         switch internalState {
         case .ready:
             executeFromBacklog()
-        case .busy(_, let currentIdentifier, let value) where currentIdentifier == identifier:
+        case .busy(_, let currentIdentifier, let value, _) where currentIdentifier == identifier:
             switch result {
             case .success(let value):
                 internalState = .success(value)
@@ -179,7 +180,7 @@ extension ContextualActor {
 
     private enum InternalState {
         case ready
-        case busy(WorkflowActionExecutor<T>, UUID, T?)
+        case busy(WorkflowActionExecutor<T>, UUID, T?, Progress)
         case success(T)
         case failure(any Error, T?)
     }
@@ -188,8 +189,8 @@ extension ContextualActor {
         switch internalState {
         case .ready:
             return .ready
-        case .busy(_, _, let value):
-            return .busy(value)
+        case .busy(_, _, let value, let progress):
+            return .busy(value, progress)
         case .success(let value):
             return .success(value)
         case .failure(let error, let value):

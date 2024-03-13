@@ -1,4 +1,4 @@
-import XCTest
+@preconcurrency import XCTest
 
 import Hollywood
 
@@ -22,7 +22,7 @@ extension ContextualActorTest {
     func testDefaultInitializer_InitialStateIsReady() throws {
         let contextualActor = ContextualActor<String>()
         XCTAssertEqual(.ready, contextualActor.state)
-        XCTAssertFalse(contextualActor.isBusy)
+        XCTAssertFalse(contextualActor.state.isBusy)
     }
 
     @MainActor
@@ -31,7 +31,7 @@ extension ContextualActorTest {
         let contextualActor = ContextualActor<String>(initialValue: value)
 
         XCTAssertEqual(.success(value), contextualActor.state)
-        XCTAssertFalse(contextualActor.isBusy)
+        XCTAssertFalse(contextualActor.state.isBusy)
     }
 
     @MainActor
@@ -40,7 +40,7 @@ extension ContextualActorTest {
         let contextualActor = ContextualActor<String>(initialError: error)
 
         XCTAssertEqual(.failure(error, nil), contextualActor.state)
-        XCTAssertFalse(contextualActor.isBusy)
+        XCTAssertFalse(contextualActor.state.isBusy)
     }
 
     @MainActor
@@ -49,7 +49,7 @@ extension ContextualActorTest {
         let contextualActor = ContextualActor<String>(initialError: error, initialValue: nil)
 
         XCTAssertEqual(.failure(error, nil), contextualActor.state)
-        XCTAssertFalse(contextualActor.isBusy)
+        XCTAssertFalse(contextualActor.state.isBusy)
     }
 
     @MainActor
@@ -59,7 +59,7 @@ extension ContextualActorTest {
         let contextualActor = ContextualActor<String>(initialError: error, initialValue: value)
 
         XCTAssertEqual(.failure(error, value), contextualActor.state)
-        XCTAssertFalse(contextualActor.isBusy)
+        XCTAssertFalse(contextualActor.state.isBusy)
     }
 }
 
@@ -81,7 +81,7 @@ extension ContextualActorTest {
 
         try await observer.verify(expectedStates: [
             .ready,
-            .busy(nil),
+            .busy(nil, .indeterminate),
             .success("Brian")
         ])
     }
@@ -103,10 +103,10 @@ extension ContextualActorTest {
 
         try await observer.verify(expectedStates: [
             .ready,
-            .busy(nil),
-            .busy("Brian"),
-            .busy("Coyner"),
-            .busy("Was Here"),
+            .busy(nil, .indeterminate),
+            .busy("Brian", .indeterminate),
+            .busy("Coyner", .indeterminate),
+            .busy("Was Here", .indeterminate),
             .success(poisonPill)
         ])
     }
@@ -129,11 +129,11 @@ extension ContextualActorTest {
 
         var expectedStates: [ContextualActor<String>.State] = []
         expectedStates.append(.ready)
-        expectedStates.append(.busy(nil))
+        expectedStates.append(.busy(nil, .indeterminate))
 
         for index in 1..<count {
             let value = index.formatted()
-            expectedStates.append(.busy(value))
+            expectedStates.append(.busy(value, .indeterminate))
         }
 
         expectedStates.append(.success(poisonPill))
@@ -164,7 +164,7 @@ extension ContextualActorTest {
 
         try await observer.verify(expectedStates: [
             .ready,
-            .busy(nil), // caused by the `PoisonPillWorkflowAction`
+            .busy(nil, .indeterminate), // caused by the `PoisonPillWorkflowAction`
             .success(poisonPill) // caused by the `PoisonPillWorkflowAction`
         ])
     }
@@ -193,7 +193,7 @@ extension ContextualActorTest {
         // to signal the `waitForCancellationExpectation` (see below).
         await fulfillment(of: [executingExpectation])
 
-        XCTAssertEqual(.busy(nil), contextualActor.state)
+        XCTAssertEqual(.busy(nil, .indeterminate), contextualActor.state)
         // Calling cancel immediately puts the contextual actor in the `.ready` state.
         contextualActor.cancel()
         XCTAssertEqual(.ready, contextualActor.state)
@@ -210,12 +210,12 @@ extension ContextualActorTest {
 
         try await observer.verify(expectedStates: [
             .ready,
-            .busy(nil),
+            .busy(nil, .indeterminate),
             // Internally, the ContextualResource transitions to the `.ready` state, but due to how the
             // @Observable macro works with the `withObservationTracking(apply:onChange:)` function, only the
             // last state at the end of the main run loop is observed.
             // .ready,
-            .busy(nil),
+            .busy(nil, .indeterminate),
             .success(poisonPill)
         ])
     }
@@ -244,7 +244,7 @@ extension ContextualActorTest {
         // to signal the `waitForCancellationExpectation` (see below).
         await fulfillment(of: [executingExpectation])
 
-        XCTAssertEqual(.busy(nil), contextualActor.state)
+        XCTAssertEqual(.busy(nil, .indeterminate), contextualActor.state)
         contextualActor.cancel()
         XCTAssertEqual(.ready, contextualActor.state)
 
@@ -257,12 +257,12 @@ extension ContextualActorTest {
 
         try await observer.verify(expectedStates: [
             .ready,
-            .busy(nil),
+            .busy(nil, .indeterminate),
             // Internally, the ContextualResource transitions to the `.ready` state, but due to how the
             // @Observable macro works with the `withObservationTracking(apply:onChange:)` function, only the
             // last state at the end of the main run loop is observed.
             // .ready,
-            .busy(nil),
+            .busy(nil, .indeterminate),
             .success(poisonPill)
         ])
     }
@@ -295,7 +295,7 @@ extension ContextualActorTest {
 
         await fulfillment(of: [executingExpectation])
 
-        XCTAssertEqual(.busy("Brian"), contextualActor.state)
+        XCTAssertEqual(.busy("Brian", .indeterminate), contextualActor.state)
         contextualActor.cancel()
         XCTAssertEqual(.ready, contextualActor.state)
 
@@ -303,10 +303,10 @@ extension ContextualActorTest {
 
         try await observer.verify(expectedStates: [
             .ready,
-            .busy(nil),
-            .busy("Brian"),
+            .busy(nil, .indeterminate),
+            .busy("Brian", .indeterminate),
             .ready,
-            .busy(nil),
+            .busy(nil, .indeterminate),
             .success(poisonPill)
         ])
     }
@@ -345,12 +345,12 @@ extension ContextualActorTest {
 
         try await observer.verify(expectedStates: [
             .ready,
-            .busy(nil),
-            .busy(nil),
-            .busy("Apple"),
-            .busy("Orange"),
-            .busy("Pineapple"),
-            .busy("Banana"),
+            .busy(nil, .indeterminate),
+            .busy(nil, .indeterminate),
+            .busy("Apple", .indeterminate),
+            .busy("Orange", .indeterminate),
+            .busy("Pineapple", .indeterminate),
+            .busy("Banana", .indeterminate),
             .success(poisonPill)
         ])
     }
@@ -374,7 +374,7 @@ extension ContextualActorTest {
 
         try await observer.verify(expectedStates: [
             .success("Brian"),
-            .busy("Brian"),
+            .busy("Brian", .indeterminate),
             .failure(error, "Brian")
         ])
     }
@@ -405,7 +405,7 @@ extension ContextualActorTest {
 
         try await observer.verify(expectedStates: [
             .ready,
-            .busy(nil),
+            .busy(nil, .indeterminate),
             .success(poisonPill)
         ])
     }
@@ -427,7 +427,7 @@ extension ContextualActorTest {
 
         try await observer.verify(expectedStates: [
             .success("Brian"), // This is the initial state.
-            .busy(nil), // The reset cleared the "Brian" result.
+            .busy(nil, .indeterminate), // The reset cleared the "Brian" result.
             .success(poisonPill)
         ])
     }
@@ -459,7 +459,7 @@ extension ContextualActorTest {
         contextualActor.execute(PoisonPillWorkflowAction(poisonPill: poisonPill))
 
         try await executionObserver.verify(expectedStates: [
-            .busy(nil),
+            .busy(nil, .indeterminate),
             .success(poisonPill)
         ])
     }
@@ -501,8 +501,8 @@ extension ContextualActorTest {
 
         try await observer.verify(expectedStates: [
             .ready,
-            .busy(nil),
-            .busy(nil),
+            .busy(nil, .indeterminate),
+            .busy(nil, .indeterminate),
             .success(poisonPill)
         ])
     }
@@ -526,11 +526,12 @@ extension ContextualActorTest {
 
         contextualActor.execute(MockWorkflowAction(state: .mockResult(value)))
 
-        XCTAssertTrue(contextualActor.isBusy)
+        XCTAssertTrue(contextualActor.state.isBusy)
 
+        let progress = Progress()
         try await observer.verify(expectedStates: [
             initialState,
-            .busy(currentValue),
+            .busy(currentValue, progress),
             .success(value)
         ])
     }
@@ -550,7 +551,7 @@ extension ContextualActorTest {
 
         try await observer.verify(expectedStates: [
             initialState,
-            .busy(currentValue),
+            .busy(currentValue, .indeterminate),
             .failure(error, currentValue)
         ])
     }
@@ -559,7 +560,7 @@ extension ContextualActorTest {
         switch initialState {
         case .ready:
             return nil
-        case .busy(_):
+        case .busy(_, _):
             XCTFail("Invalid initialState")
             return nil
         case .success(let value):
