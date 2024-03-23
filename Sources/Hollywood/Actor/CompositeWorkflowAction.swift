@@ -38,3 +38,18 @@ extension CompositeWorkflowAction {
         return try await action.execute()
     }
 }
+
+extension CompositeWorkflowAction {
+
+    /// Developers call this function to execute a `WorkflowAction` that does not directly conform to the `ProgressReportingWorkflowAction`
+    /// but still contributes progress by way of child task actions or by directly updating the ``TaskProgress/progress`` instance associated with the
+    /// current task.
+    ///
+    /// A best-practice for a `CompositeWorkflowAction` participating in progress reporting is to set the current `Progress/totalUnitCount` to 100.
+    /// This means, for example, that a `pendingUnitCount` value of `15` passed to this function contributes 15% towards the parent's total progress.
+    ///
+    /// - SeeAlso: `UnitOfWork` for an example of how this function is used.
+    public func execute<A: WorkflowAction>(_ action: A, pendingUnitCount: Int64) async throws -> A.T {
+        return try await execute(UnitOfWork(underlyingAction: action, pendingUnitCount: pendingUnitCount))
+    }
+}

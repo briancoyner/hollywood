@@ -7,8 +7,16 @@ extension ContextualActor.State: Equatable where T: Equatable {
         switch (lhs, rhs) {
         case (.ready, .ready):
             return true
-        case (.busy(let lhsValue), .busy(let rhsValue)):
+        case (.busy(let lhsValue, let lhsProgress), .busy(let rhsValue, let rhsProgress)):
+            /// TODO: Revisit this.
             return lhsValue == rhsValue
+                && lhsProgress.isIndeterminate == rhsProgress.isIndeterminate
+                && lhsProgress.isCancelled == rhsProgress.isCancelled
+                && lhsProgress.isFinished == rhsProgress.isFinished
+                && lhsProgress.isCancellable == rhsProgress.isCancellable
+                && lhsProgress.isCancelled == rhsProgress.isCancelled
+                && lhsProgress.totalUnitCount == rhsProgress.totalUnitCount
+                && lhsProgress.completedUnitCount == rhsProgress.completedUnitCount
         case (.success(let lhsValue), .success(let rhsValue)):
             return lhsValue == rhsValue
         case (.failure(let lhsError, let lhsValue), .failure(let rhsError, let rhsValue)):
