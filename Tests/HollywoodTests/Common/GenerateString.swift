@@ -5,7 +5,7 @@ import Hollywood
 struct GenerateString: CompositeWorkflowAction {
 
     func execute() async throws -> String {
-        TaskProgress.progress.totalUnitCount = 100
+        try TaskProgress.safeProgress.totalUnitCount = 100
 
         let numberString = try await execute(GenerateNumberString(iterations: 5, pendingUnitCount: 100))
 

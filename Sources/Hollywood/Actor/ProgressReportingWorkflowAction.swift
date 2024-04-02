@@ -25,7 +25,7 @@ extension ProgressReportingWorkflowAction {
         let taskProgress = Progress()
         defer { finalizeTaskProgressIfNeeded(taskProgress) }
 
-        let parentProgress = TaskProgress.progress
+        let parentProgress = try TaskProgress.safeProgress
         prepareParentProgressIfNeeded(parentProgress)
 
         parentProgress.addChild(taskProgress, withPendingUnitCount: pendingUnitCount)

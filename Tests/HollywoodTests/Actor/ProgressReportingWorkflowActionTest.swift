@@ -1,9 +1,33 @@
 import Foundation
 import XCTest
 
-import Hollywood
+@testable import Hollywood
 
 final class ProgressReportingWorkflowActionTest: XCTestCase {
+}
+
+extension ProgressReportingWorkflowActionTest {
+
+    func testProgressReportingAPIMisuseErrorIsThrownIfTheTaskLocalProgressIsNotProperlySetUpOnTheTaskLocal() async throws {
+        
+        struct MockProgressReportingWorkflowAction: ProgressReportingWorkflowAction {
+            typealias T = String
+
+            let pendingUnitCount: Int64
+
+            func execute(withProgress progress: Progress) async throws -> String {
+                return "Brian"
+            }
+        }
+
+        let action = MockProgressReportingWorkflowAction(pendingUnitCount: 100)
+        do {
+            _ = try await action.execute()
+            XCTFail("Expected a `\(ProgressReportingAPIMisuseError.self) to be thrown because a parent progress was not set up.")
+        } catch is ProgressReportingAPIMisuseError {
+            // Expected
+        }
+    }
 }
 
 extension ProgressReportingWorkflowActionTest {
@@ -77,7 +101,7 @@ extension ProgressReportingWorkflowActionTest {
 
             func execute(withProgress progress: Progress) async throws -> String {
                 progress.totalUnitCount = 6
-                
+
                 // Note: This action fails to update the progress object's `completedUnitCount`. When this happens the
                 // `ProgressReportingWorkflowAction` ensures the `completedUnitCount` is equal to the
                 // `totalUnitCount` (i.e. this action's progress is 100% complete). This in turn updates the parent
@@ -115,7 +139,7 @@ extension ProgressReportingWorkflowActionTest {
 
                 // Note: This action fails "over completes" this object's `completedUnitCount`. When this happens the
                 // `ProgressReportingWorkflowAction` leaves the progress as-is because the parent progress has
-                // already been updated to reflect completion of this child progress. 
+                // already been updated to reflect completion of this child progress.
 
                 return "Brian"
             }

@@ -41,7 +41,7 @@ extension MockWorkflowAction {
             if let progressContext {
                 // Any action executing in the context of a `ContextualActor` may ask for a Task-local
                 // `Progress` object via the `TaskProgress/progress` property.
-                let progress = TaskProgress.progress
+                let progress = try TaskProgress.safeProgress
                 progress.totalUnitCount = progressContext.totalUnitCount
                 progress.completedUnitCount = progressContext.completedUnitCount
             }

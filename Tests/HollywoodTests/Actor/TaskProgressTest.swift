@@ -8,16 +8,6 @@ final class TaskProgressTest: XCTestCase {
 
 extension TaskProgressTest {
 
-    func testDefaultProgressIsInitiallyIndeterminate() async throws {
-        let progress = TaskProgress.progress
-        XCTAssertEqual(0, progress.totalUnitCount)
-        XCTAssertEqual(0, progress.completedUnitCount)
-        XCTAssertEqual(true, progress.isIndeterminate)
-    }
-}
-
-extension TaskProgressTest {
-
     /// This test is mostly validating generating understanding of how the `TaskLocal` API works.
     func testGeneralTaskProgressUsage() async throws {
 
