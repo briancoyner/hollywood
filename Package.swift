@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -26,39 +26,31 @@ let package = Package(
             dependencies: [
                 // None
             ],
-            swiftSettings: [
-                .strictConcurrency,
-                .existentialAny,
-                .forwardTrailingClosure
-            ]
+            swiftSettings: swiftSettings
         ),
         .testTarget(
             name: "HollywoodTests",
             dependencies: [
                 "Hollywood"
             ],
-            swiftSettings: [
-                .strictConcurrency,
-                .existentialAny,
-                .forwardTrailingClosure
-            ]
+            swiftSettings: swiftSettings
         )
     ]
 )
 
 // MARK: - Swift Settings
 
-extension SwiftSetting {
-
-    static var existentialAny: SwiftSetting {
-        return .enableUpcomingFeature("ExistentialAny")
-    }
-
-    static var forwardTrailingClosure: SwiftSetting {
-        return .enableUpcomingFeature("ForwardTrailingClosure")
-    }
-
-    static var strictConcurrency: SwiftSetting {
-        return .enableExperimentalFeature("StrictConcurrency=complete")
-    }
+private var swiftSettings: [SwiftSetting] {
+    return [
+        .enableUpcomingFeature("BareSlashRegexLiterals"),
+        .enableUpcomingFeature("ConciseMagicFile"),
+        .enableUpcomingFeature("ForwardTrailingClosures"),
+        .enableUpcomingFeature("ImportObjcForwardDeclarations"),
+        .enableUpcomingFeature("DisableOutwardActorInference"),
+        .enableUpcomingFeature("ExistentialAny"),
+        .enableUpcomingFeature("DeprecateApplicationMain"),
+        .enableUpcomingFeature("GlobalConcurrency"),
+        .enableUpcomingFeature("IsolatedDefaultValues"),
+        .enableExperimentalFeature("StrictConcurrency=complete")
+    ]
 }

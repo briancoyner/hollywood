@@ -1,12 +1,14 @@
 import Foundation
 
-/// Asynchronous workflows often require collaborating with multiple ``WorkflowAction``s.
+/// Asynchronous workflows often require collaborating with other ``WorkflowAction``s to complete a unit of related work. This protocol
+/// helps developers to organize more complex workflows behind a "composite" definition.
+///
 /// Adopting this protocol does two things:
 ///
 /// 1) It tells the reader that the ``WorkflowAction`` leans on other ``WorkflowAction``s to complete the action.
 /// 2) Exposes a convenience method for executing ``WorkflowAction``s without having to explicitly invoke the action's ``execute(_:)`` method.
 ///
-/// Example Implementation that mimics how an app may sign in a user.
+/// Here's an example showing how to use a composite action that executes other actions to sign-in a user:
 ///
 /// ```
 /// struct SignInUserWorkflowAction: CompositeWorkflowAction {

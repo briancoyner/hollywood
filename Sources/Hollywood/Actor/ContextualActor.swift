@@ -3,7 +3,7 @@ import SwiftUI
 
 /// A `ContextualActor` asynchronously executes and publishes the result of a ``WorkflowAction``.
 /// A `ContextualActor` transitions between ``ContextualActor/State-swift.enum``s. The current
-/// state is available by reading/ observing the  ``state-swift.property``.
+/// state is available by reading/ observing the current ``state-swift.property``.
 @MainActor @Observable
 public final class ContextualActor<T: Sendable>: Sendable {
 

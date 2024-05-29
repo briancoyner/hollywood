@@ -1,9 +1,10 @@
 import Foundation
 
 /// A `WorkflowAction` is a simple command that asynchronously executes to produce a value `T`.
-/// A good way to think about this protocol is that it forces you to give a discoverable name to an asynchronous
+///
+/// A good way to think about this protocol is that it forces developers to give a discoverable name to an asynchronous
 /// function. For a large code base, with multiple developers contributing code, this helps with discoverability,
-/// maintenance, and just generally helps organize reusable functions.
+/// maintenance, and just generally helps organize reusable, composable asynchronous functions.
 ///
 /// Implementations typically following this naming scheme:
 /// - `<Action><Noun>WorkflowAction`
@@ -18,7 +19,7 @@ import Foundation
 /// Of course you're free to omit the `WorkflowAction` suffix if you think it's too noisy.
 /// - `<Action><Noun>`
 ///
-/// Alternative naming examples:
+/// Thus leading to alternative naming examples:
 /// - `ObtainTokens`
 /// - `SearchMusicStore`
 /// - `LoadPhotosPickerSelectedImage`
