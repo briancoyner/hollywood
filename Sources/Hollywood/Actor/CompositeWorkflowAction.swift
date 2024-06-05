@@ -30,7 +30,7 @@ import Foundation
 /// ```
 ///
 /// Of course, there's nothing stopping you from implementing the action as a non-`CompositeWorkflowAction`. Basically, this API is an alternative to
-/// tossing async functions into case-less enums and/ or structs, or even as free functions.
+/// tossing async static functions into case-less enums, structs, or even as free functions.
 public protocol CompositeWorkflowAction: WorkflowAction {
 }
 
