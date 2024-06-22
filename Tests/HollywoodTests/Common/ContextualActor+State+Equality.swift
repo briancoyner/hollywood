@@ -1,7 +1,7 @@
 import Foundation
 import Hollywood
 
-extension ContextualActor.State: Equatable where T: Equatable {
+extension ContextualActor.State: @retroactive Equatable where T: Equatable {
 
     public static func == (lhs: ContextualActor.State, rhs: ContextualActor.State) -> Bool {
         switch (lhs, rhs) {

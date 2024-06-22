@@ -1,4 +1,4 @@
-// swift-tools-version: 5.10
+// swift-tools-version: 6.0
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "Hollywood",
     platforms: [
-        .iOS(.v17),
+        .iOS(.v18),
         .macOS(.v14)
     ],
     products: [
@@ -35,6 +35,9 @@ let package = Package(
             ],
             swiftSettings: swiftSettings
         )
+    ],
+    swiftLanguageVersions: [
+        .v6
     ]
 )
 
@@ -42,15 +45,6 @@ let package = Package(
 
 private var swiftSettings: [SwiftSetting] {
     return [
-        .enableUpcomingFeature("BareSlashRegexLiterals"),
-        .enableUpcomingFeature("ConciseMagicFile"),
-        .enableUpcomingFeature("ForwardTrailingClosures"),
-        .enableUpcomingFeature("ImportObjcForwardDeclarations"),
-        .enableUpcomingFeature("DisableOutwardActorInference"),
-        .enableUpcomingFeature("ExistentialAny"),
-        .enableUpcomingFeature("DeprecateApplicationMain"),
-        .enableUpcomingFeature("GlobalConcurrency"),
-        .enableUpcomingFeature("IsolatedDefaultValues"),
-        .enableExperimentalFeature("StrictConcurrency=complete")
+        .enableUpcomingFeature("ExistentialAny")
     ]
 }
