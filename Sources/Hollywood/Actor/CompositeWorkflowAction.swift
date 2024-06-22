@@ -1,14 +1,12 @@
 import Foundation
 
-/// Asynchronous workflows often require collaborating with other ``WorkflowAction``s to complete a unit of related work. This protocol
-/// helps developers to organize more complex workflows behind a "composite" definition.
-///
+/// Asynchronous workflows often require collaborating with multiple ``WorkflowAction``s.
 /// Adopting this protocol does two things:
 ///
 /// 1) It tells the reader that the ``WorkflowAction`` leans on other ``WorkflowAction``s to complete the action.
 /// 2) Exposes a convenience method for executing ``WorkflowAction``s without having to explicitly invoke the action's ``execute(_:)`` method.
 ///
-/// Here's an example showing how to use a composite action that executes other actions to sign-in a user:
+/// Example implementation that mimics how an app may sign in a user.
 ///
 /// ```
 /// struct SignInUserWorkflowAction: CompositeWorkflowAction {
@@ -30,7 +28,7 @@ import Foundation
 /// ```
 ///
 /// Of course, there's nothing stopping you from implementing the action as a non-`CompositeWorkflowAction`. Basically, this API is an alternative to
-/// tossing async static functions into case-less enums, structs, or even as free functions.
+/// tossing async functions into case-less enums and/ or structs, or even as free functions.
 public protocol CompositeWorkflowAction: WorkflowAction {
 }
 
