@@ -12,11 +12,3 @@ extension Logger {
         return "briancoyner.github.io"
     }
 }
-
-
-// MARK: - Swift 6 Concurrency Workaround
-
-extension Logger: @unchecked Sendable {
-    // OSLog/Logger should be marked `Sendable`: 
-    // - https://forums.developer.apple.com/forums/thread/747816
-}
