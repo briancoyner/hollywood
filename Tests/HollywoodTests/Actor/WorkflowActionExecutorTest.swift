@@ -4,6 +4,7 @@ import XCTest
 @testable import Hollywood
 
 final class WorkflowActionTest: XCTestCase {
+
 }
 
 extension WorkflowActionTest {

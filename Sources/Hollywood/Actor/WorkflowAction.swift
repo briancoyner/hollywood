@@ -1,10 +1,9 @@
 import Foundation
 
 /// A `WorkflowAction` is a simple command that asynchronously executes to produce a value `T`.
-///
-/// A good way to think about this protocol is that it forces developers to give a discoverable name to an asynchronous
+/// A good way to think about this protocol is that it forces you to give a discoverable name to an asynchronous
 /// function. For a large code base, with multiple developers contributing code, this helps with discoverability,
-/// maintenance, and just generally helps organize reusable, composable asynchronous functions.
+/// maintenance, and just generally helps organize reusable functions.
 ///
 /// Implementations typically following this naming scheme:
 /// - `<Action><Noun>WorkflowAction`
@@ -19,7 +18,7 @@ import Foundation
 /// Of course you're free to omit the `WorkflowAction` suffix if you think it's too noisy.
 /// - `<Action><Noun>`
 ///
-/// Thus leading to alternative naming examples:
+/// Alternative naming examples:
 /// - `ObtainTokens`
 /// - `SearchMusicStore`
 /// - `LoadPhotosPickerSelectedImage`
@@ -31,8 +30,8 @@ public protocol WorkflowAction<T>: Sendable {
 
     associatedtype T: Sendable
 
-    /// Implementations should throw a `CancellationError` if the workflow action cancels. `Task.checkCancellation()`,
-    /// 
+    /// Implementations should throw a `CancellationError` if the workflow action cancels.
+    ///
     /// - Returns: `T` upon success.
     /// - Throws: `CancellationError` if the workflow action cancels
     func execute() async throws -> T

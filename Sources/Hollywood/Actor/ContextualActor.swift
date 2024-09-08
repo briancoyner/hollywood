@@ -3,7 +3,7 @@ import SwiftUI
 
 /// A `ContextualActor` asynchronously executes and publishes the result of a ``WorkflowAction``.
 /// A `ContextualActor` transitions between ``ContextualActor/State-swift.enum``s. The current
-/// state is available by reading/ observing the current ``state-swift.property``.
+/// state is available by reading/ observing the ``state-swift.property``.
 @MainActor @Observable
 public final class ContextualActor<T: Sendable>: Sendable {
 
@@ -56,7 +56,7 @@ extension ContextualActor {
     ///   - cancelIfBusy: Pass `true` to cancel the current asynchronous ``WorkflowAction`` and immediately submit the
     ///   given ``WorkflowAction`` for execution.
     ///
-    ///   - SeeAlso: ``State-swift.enum`` for more information on expected state transitions.
+    /// - SeeAlso: ``State-swift.enum`` for more information on expected state transitions.
     public func execute(_ action: any WorkflowAction<T>, cancelIfBusy: Bool = false) {
         switch internalState {
         case .ready:

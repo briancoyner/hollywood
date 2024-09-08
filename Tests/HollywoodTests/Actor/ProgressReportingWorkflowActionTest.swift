@@ -9,7 +9,7 @@ final class ProgressReportingWorkflowActionTest: XCTestCase {
 extension ProgressReportingWorkflowActionTest {
 
     func testProgressReportingAPIMisuseErrorIsThrownIfTheTaskLocalProgressIsNotProperlySetUpOnTheTaskLocal() async throws {
-        
+
         struct MockProgressReportingWorkflowAction: ProgressReportingWorkflowAction {
             typealias T = String
 
