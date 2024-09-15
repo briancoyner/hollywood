@@ -1,4 +1,5 @@
-import XCTest
+import XCTest  // XCTWaiter + XCTestExpectation
+import Testing
 
 import Hollywood
 
@@ -52,10 +53,12 @@ extension MockWorkflowAction {
         case .mockCancellation(let executingExpectation, let waitForCancellationExpectation):
             executingExpectation.fulfill()
 
-            await XCTWaiter().fulfillment(of: [waitForCancellationExpectation])
+            let result = await XCTWaiter().fulfillment(of: [waitForCancellationExpectation], timeout: 3)
+            #expect(result == .completed)
+
             try Task.checkCancellation()
 
-            XCTFail("Expected the parent task to be cancelled and a `\(CancellationError.self) to be thrown.")
+            Issue.record("Expected the parent task to be cancelled and a `\(CancellationError.self) to be thrown.")
             throw TimeOutError()
         }
     }

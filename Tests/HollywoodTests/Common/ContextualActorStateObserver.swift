@@ -1,4 +1,5 @@
-import XCTest
+import XCTest  // XCTWaiter + XCTestExpectation
+import Testing
 
 import Hollywood
 
@@ -31,9 +32,10 @@ final class ContextualActorStateObserver<T> where T: Sendable, T: Equatable {
 extension ContextualActorStateObserver {
 
     func verify(expectedStates: [ContextualActor<T>.State]) async throws {
-        await XCTWaiter().fulfillment(of: [semaphore], timeout: 3)
+        let result = await XCTWaiter().fulfillment(of: [semaphore], timeout: 3)
+        #expect(result == .completed)
 
-        XCTAssertEqual(expectedStates, collected)
+        #expect(collected == expectedStates)
         collected.removeAll()
     }
 }

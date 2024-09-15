@@ -1,8 +1,9 @@
-import XCTest
+import Testing
+import Foundation
 
 import Hollywood
 
-final class ContextualActor_State_CaseDetectionTest: XCTestCase {
+struct ContextualActor_State_CaseDetectionTest {
 
     let ready: ContextualActor<String>.State = .ready
     let busyNoValue: ContextualActor<String>.State = .busy(nil, Progress())
@@ -14,38 +15,43 @@ final class ContextualActor_State_CaseDetectionTest: XCTestCase {
 
 extension ContextualActor_State_CaseDetectionTest {
 
-    func testIsReady_MatchesExpectedState() {
-        XCTAssertEqual(true, ready.isReady)
-        XCTAssertEqual(false, busyNoValue.isReady)
-        XCTAssertEqual(false, busyWithValue.isReady)
-        XCTAssertEqual(false, success.isReady)
-        XCTAssertEqual(false, failureNoValue.isReady)
-        XCTAssertEqual(false, failureWithValue.isReady)
-    }
-    func testIsBusy_MatchesExpectedState() {
-        XCTAssertEqual(false, ready.isBusy)
-        XCTAssertEqual(true, busyNoValue.isBusy)
-        XCTAssertEqual(true, busyWithValue.isBusy)
-        XCTAssertEqual(false, success.isBusy)
-        XCTAssertEqual(false, failureNoValue.isBusy)
-        XCTAssertEqual(false, failureWithValue.isBusy)
+    @Test
+    func isReady_MatchesExpectedState() {
+        #expect(ready.isReady == true)
+        #expect(busyNoValue.isReady == false)
+        #expect(busyWithValue.isReady == false)
+        #expect(success.isReady == false)
+        #expect(failureNoValue.isReady == false)
+        #expect(failureWithValue.isReady == false)
     }
 
-    func testValue_MatchesExpectedState() {
-        XCTAssertEqual(nil, ready.value)
-        XCTAssertEqual(nil, busyNoValue.value)
-        XCTAssertEqual("Value", busyWithValue.value)
-        XCTAssertEqual("Value", success.value)
-        XCTAssertEqual(nil, failureNoValue.value)
-        XCTAssertEqual("Value", failureWithValue.value)
+    @Test
+    func isBusy_MatchesExpectedState() {
+        #expect(ready.isBusy == false)
+        #expect(busyNoValue.isBusy)
+        #expect(busyWithValue.isBusy)
+        #expect(success.isBusy == false)
+        #expect(failureNoValue.isBusy == false)
+        #expect(failureWithValue.isBusy == false)
     }
 
-    func testError_MatchesExpectedState() {
-        XCTAssertEqual(nil, ready.error as? NSError)
-        XCTAssertEqual(nil, busyNoValue.error as? NSError)
-        XCTAssertEqual(nil, busyWithValue.error as? NSError)
-        XCTAssertEqual(nil, success.error as? NSError)
-        XCTAssertEqual(MockError() as NSError, failureNoValue.error as? NSError)
-        XCTAssertEqual(MockError() as NSError, failureWithValue.error as? NSError)
+    @Test
+    func value_MatchesExpectedState() {
+        #expect(ready.value == nil)
+        #expect(busyNoValue.value == nil)
+        #expect(busyWithValue.value == "Value")
+        #expect(success.value == "Value")
+        #expect(failureNoValue.value == nil)
+        #expect(failureWithValue.value == "Value")
+    }
+
+    @Test
+    func error_MatchesExpectedState() {
+        #expect(ready.error == nil)
+        #expect(busyNoValue.error == nil)
+        #expect(busyWithValue.error == nil)
+        #expect(success.error == nil)
+        #expect(failureNoValue.error as? NSError == MockError() as NSError)
+        #expect(failureWithValue.error as? NSError == MockError() as NSError)
     }
 }

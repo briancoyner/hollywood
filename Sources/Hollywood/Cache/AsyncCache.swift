@@ -32,7 +32,7 @@ import Foundation
 ///
 /// ### Appoint a single monitor/ owner to reset
 ///
-/// Typically there's a single monitor/ owner responsible for calling ``reset()``. You may 
+/// Typically there's a single monitor/ owner responsible for calling ``reset()``. You may
 /// experience unexpected behavior if you have multiple shared owners of the cache concurrently
 /// invoking ``reset()``. See "Reset Behavior" notes).
 ///
@@ -53,7 +53,7 @@ public actor AsyncCache<T: Sendable> {
     private var state: State = .empty
 
     /// Creates a cache whose ``value`` is lazily loaded using the given ``AsyncCacheCommand``.
-    /// 
+    ///
     /// - Parameter command: the command used to lazily load and ``reset()`` the ``value``.
     public init(command: any AsyncCacheCommand<T>) {
         self.command = command
@@ -194,7 +194,12 @@ extension AsyncCache {
     }
 
     private func cancelContinuation(withID identifier: UUID) {
-        var continuations = activeContinuations
+        guard case .busy(var continuations) = state else {
+            // Important: It's possible that a cancellation request needs to be ignored because
+            // the value is already returned to the caller. This may happen due to how the
+            // the `withTaskCancellationHandler:onCancel:` callback happens asynchronously.
+            return
+        }
 
         continuations[identifier]?.resume(throwing: CancellationError())
         continuations[identifier] = nil

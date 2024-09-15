@@ -1,28 +1,28 @@
 import Foundation
-import XCTest
+import XCTest  // XCTWaiter + XCTestExpectation
+import Testing
 
 @testable import Hollywood
 
-final class WorkflowActionTest: XCTestCase {
-
+struct WorkflowActionTest {
 }
 
 extension WorkflowActionTest {
 
-    @MainActor
-    func testSuccessfulTask_CompletesWithExpectedResult_ProgressIsForcedToCompletionWhenActionFailsToFullyUpdateTheCompletedUnitCount() async {
+    @Test @MainActor
+    func successfulTask_CompletesWithExpectedResult_ProgressIsForcedToCompletionWhenActionFailsToFullyUpdateTheCompletedUnitCount() async {
         let progressContext = MockWorkflowAction<String>.ProgressContext(totalUnitCount: 100, completedUnitCount: 85)
         await doTestSuccessfulTask_CompletesWithExpectedResult_ProgressTracked(with: progressContext)
     }
 
-    @MainActor
-    func testSuccessfulTask_CompletesWithExpectedResult_ProgressIsCompleted() async {
+    @Test @MainActor
+    func successfulTask_CompletesWithExpectedResult_ProgressIsCompleted() async {
         let progressContext = MockWorkflowAction<String>.ProgressContext(totalUnitCount: 100, completedUnitCount: 100)
         await doTestSuccessfulTask_CompletesWithExpectedResult_ProgressTracked(with: progressContext)
     }
 
-    @MainActor
-    func testSuccessfulTask_CompletesWithExpectedResult_OverCompletedProgressIsClampedToTotalUnitCount() async {
+    @Test @MainActor
+    func successfulTask_CompletesWithExpectedResult_OverCompletedProgressIsClampedToTotalUnitCount() async {
         let progressContext = MockWorkflowAction<String>.ProgressContext(totalUnitCount: 100, completedUnitCount: 151)
         await doTestSuccessfulTask_CompletesWithExpectedResult_ProgressTracked(with: progressContext)
     }
@@ -37,29 +37,30 @@ extension WorkflowActionTest {
         let executor = WorkflowActionExecutor(action: action) { result in
             switch result {
             case .success(let string):
-                XCTAssertEqual("Brian", string)
+                #expect(string == "Brian")
                 expectation.fulfill()
             case .failure(let error):
-                XCTFail("Expected success not failure with \(error)")
+                Issue.record(error, "Expected success not failure with \(error).")
             }
         }
 
         let rootProgress = Progress(totalUnitCount: progressContext.totalUnitCount)
         executor.start(with: rootProgress)
-        await fulfillment(of: [expectation])
+        let result = await XCTWaiter().fulfillment(of: [expectation], timeout: 3)
+        #expect(result == .completed)
 
         // The progress `completedUnitCount` should always match the progress `totalUnitCount`.
         // The `WorkflowActionExecutor` forces this condition when the underlying task succeeds.
-        XCTAssertEqual(progressContext.totalUnitCount, rootProgress.completedUnitCount)
-        XCTAssertEqual(false, rootProgress.isIndeterminate)
-        XCTAssertEqual(1, Int(rootProgress.fractionCompleted))
+        #expect(progressContext.totalUnitCount == rootProgress.completedUnitCount)
+        #expect(rootProgress.isIndeterminate == false)
+        #expect(Int(rootProgress.fractionCompleted) == 1)
     }
 }
 
 extension WorkflowActionTest {
 
-    @MainActor
-    func testSuccessfulTask_CompletesWhenAProgressReportingActionIsSubmittedToTheExecutor() async {
+    @Test @MainActor
+    func successfulTask_CompletesWhenAProgressReportingActionIsSubmittedToTheExecutor() async {
 
         struct MockProgressReportingAction: ProgressReportingWorkflowAction {
             typealias T = String
@@ -82,29 +83,30 @@ extension WorkflowActionTest {
         let executor = WorkflowActionExecutor(action: action) { result in
             switch result {
             case .success(let string):
-                XCTAssertEqual("Brian", string)
+                #expect(string == "Brian")
                 expectation.fulfill()
             case .failure(let error):
-                XCTFail("Expected success not failure with \(error)")
+                Issue.record(error, "Expected success not failure with \(error).")
             }
         }
 
         let rootProgress = Progress()
         executor.start(with: rootProgress)
-        await fulfillment(of: [expectation])
+        let result = await XCTWaiter().fulfillment(of: [expectation], timeout: 3)
+        #expect(result == .completed)
 
         // The progress `completedUnitCount` should always match the progress `totalUnitCount`.
         // The `WorkflowActionExecutor` forces this condition when the underlying task succeeds.
-        XCTAssertEqual(100, rootProgress.completedUnitCount)
-        XCTAssertEqual(false, rootProgress.isIndeterminate)
-        XCTAssertEqual(1, Int(rootProgress.fractionCompleted))
+        #expect(rootProgress.completedUnitCount == 100)
+        #expect(rootProgress.isIndeterminate == false)
+        #expect(Int(rootProgress.fractionCompleted) == 1)
     }
 }
 
 extension WorkflowActionTest {
 
-    @MainActor
-    func testDeinitAutomaticallyCancelsItsUnderlyingTask() async throws {
+    @Test @MainActor
+    func deinitAutomaticallyCancelsItsUnderlyingTask() async throws {
         let executingExpectation = XCTestExpectation()
         let waitForCancellationExpectation = XCTestExpectation()
         let action = MockWorkflowAction<String>(state: .mockCancellation(
@@ -128,11 +130,12 @@ extension WorkflowActionTest {
         // when the `executor` reference is set to `nil`, which causes the executor's `deinit`
         // method to execute, which then cancels the underlying `Task`.
         let progress = Progress()
-        try XCTUnwrap(executor).start(with: progress)
+        try #require(executor).start(with: progress)
 
         // Now let's wait for the executor to signal it's executing. The mock executor then
         // wait for the `waitForCancellationExpectation` to be signaled before continuing execution.
-        await fulfillment(of: [executingExpectation], timeout: 3)
+        let executingResult = await XCTWaiter().fulfillment(of: [executingExpectation], timeout: 3)
+        #expect(executingResult == .completed)
 
         // The executor is now executing again and waiting for the `waitForCancellationExpectation`
         // to be signaled. Setting the `executor` to `nil` sets the reference count to zero, which
@@ -143,18 +146,19 @@ extension WorkflowActionTest {
         // the underlying `Task` to continue its and complete its execution. The mock executor
         // checks for `Task` cancellation and throws a `CancellationError`.
         waitForCancellationExpectation.fulfill()
-        await fulfillment(of: [waitForResult], timeout: 3)
+        let result = await XCTWaiter().fulfillment(of: [waitForResult], timeout: 3)
+        #expect(result == .completed)
 
         // We should now have a `Result` that is a `CancellationError`.
-        let actualResult = try XCTUnwrap(capturedResult)
+        let actualResult = try #require(capturedResult)
         switch actualResult {
         case .success(let unexpectedValue):
-            XCTFail("The executor should have been cancelled, but returned a `\(unexpectedValue)` result.")
+            Issue.record("The executor should have been cancelled, but returned a `\(unexpectedValue)` result.")
         case .failure(let error) where error is CancellationError:
             // This expected.
             break
         case .failure(let unexpectedError):
-            XCTFail("The executor should have been cancelled, but instead threw a `\(unexpectedError)` error.")
+            Issue.record(unexpectedError, "The executor should have been cancelled, but instead threw a `\(unexpectedError)` error.")
         }
     }
 }

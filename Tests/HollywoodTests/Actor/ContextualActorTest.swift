@@ -1,65 +1,57 @@
-import XCTest
+import XCTest  // XCTWaiter + XCTestExpectation
+import Testing
 
 import Hollywood
 
-final class ContextualActorTest: XCTestCase {
-}
-
-extension ContextualActorTest {
-
-    override func setUp() async throws {
-        try await super.setUp()
-
-        continueAfterFailure = false
-    }
+struct ContextualActorTest {
 }
 
 // MARK: - Initializer/ Initial State Tests
 
 extension ContextualActorTest {
 
-    @MainActor
-    func testDefaultInitializer_InitialStateIsReady() throws {
+    @Test @MainActor
+    func defaultInitializer_InitialStateIsReady() throws {
         let contextualActor = ContextualActor<String>()
-        XCTAssertEqual(.ready, contextualActor.state)
-        XCTAssertFalse(contextualActor.state.isBusy)
+        #expect(contextualActor.state == .ready)
+        #expect(contextualActor.state.isBusy == false)
     }
 
-    @MainActor
-    func testInitialValueAutomaticallyTransitionsToASuccessStateWithTheInitialValue() throws {
+    @Test @MainActor
+    func initialValueAutomaticallyTransitionsToASuccessStateWithTheInitialValue() throws {
         let value = "Brian"
         let contextualActor = ContextualActor<String>(initialValue: value)
 
-        XCTAssertEqual(.success(value), contextualActor.state)
-        XCTAssertFalse(contextualActor.state.isBusy)
+        #expect(contextualActor.state == .success(value))
+        #expect(contextualActor.state.isBusy == false)
     }
 
-    @MainActor
-    func testInitialErrorWithDefaultInitialValueAutomaticallyTransitionsToAFailureStateWithTheInitialErrorAndDefaultInitialValue() throws {
+    @Test @MainActor
+    func initialErrorWithDefaultInitialValueAutomaticallyTransitionsToAFailureStateWithTheInitialErrorAndDefaultInitialValue() throws {
         let error = MockError()
         let contextualActor = ContextualActor<String>(initialError: error)
 
-        XCTAssertEqual(.failure(error, nil), contextualActor.state)
-        XCTAssertFalse(contextualActor.state.isBusy)
+        #expect(contextualActor.state == .failure(error, nil))
+        #expect(contextualActor.state.isBusy == false)
     }
 
-    @MainActor
-    func testInitialErrorWithExplicitNilInitialValueAutomaticallyTransitionsToAFailureStateWithTheInitialErrorAndNilInitialValue() throws {
+    @Test @MainActor
+    func initialErrorWithExplicitNilInitialValueAutomaticallyTransitionsToAFailureStateWithTheInitialErrorAndNilInitialValue() throws {
         let error = MockError()
         let contextualActor = ContextualActor<String>(initialError: error, initialValue: nil)
 
-        XCTAssertEqual(.failure(error, nil), contextualActor.state)
-        XCTAssertFalse(contextualActor.state.isBusy)
+        #expect(contextualActor.state == .failure(error, nil))
+        #expect(contextualActor.state.isBusy == false)
     }
 
-    @MainActor
-    func testInitialErrorWithExplicitNonNilInitialValueAutomaticallyTransitionsToAFailureStateWithTheInitialErrorAndInitialValue() throws {
+    @Test @MainActor
+    func initialErrorWithExplicitNonNilInitialValueAutomaticallyTransitionsToAFailureStateWithTheInitialErrorAndInitialValue() throws {
         let error = MockError()
         let value = "Brian"
         let contextualActor = ContextualActor<String>(initialError: error, initialValue: value)
 
-        XCTAssertEqual(.failure(error, value), contextualActor.state)
-        XCTAssertFalse(contextualActor.state.isBusy)
+        #expect(contextualActor.state == .failure(error, value))
+        #expect(contextualActor.state.isBusy == false)
     }
 }
 
@@ -67,8 +59,8 @@ extension ContextualActorTest {
 
 extension ContextualActorTest {
 
-    @MainActor
-    func testExecuteActionThatReturnsAValue_VerifyStateTransitionsToBusy_ThenToSuccessWithTheReturnValue() async throws {
+    @Test @MainActor
+    func executeActionThatReturnsAValue_VerifyStateTransitionsToBusy_ThenToSuccessWithTheReturnValue() async throws {
         let contextualActor = ContextualActor<String>()
 
         let value = "Brian"
@@ -86,8 +78,8 @@ extension ContextualActorTest {
         ])
     }
 
-    @MainActor
-    func testExecuteMultipleActionsThatReturnValues_VerifyActionsExecuteInOrderAndCorrectlyTransitionStates() async throws {
+    @Test @MainActor
+    func executeMultipleActionsThatReturnValues_VerifyActionsExecuteInOrderAndCorrectlyTransitionStates() async throws {
         let contextualActor = ContextualActor<String>()
 
         let poisonPill = "PoisonPill"
@@ -111,8 +103,8 @@ extension ContextualActorTest {
         ])
     }
 
-    @MainActor
-    func testExecuteAFloodOfActionsThatReturnValues_VerifyActionsExecuteInOrderAndCorrectlyTransitionStates() async throws {
+    @Test @MainActor
+    func executeAFloodOfActionsThatReturnValues_VerifyActionsExecuteInOrderAndCorrectlyTransitionStates() async throws {
         let contextualActor = ContextualActor<String>()
 
         let poisonPill = "PoisonPill"
@@ -146,8 +138,8 @@ extension ContextualActorTest {
 
 extension ContextualActorTest {
 
-    @MainActor
-    func testCancelWhenInReadyState_VerifyNoStateTransitions_StateRemainsInReady() async throws {
+    @Test @MainActor
+    func cancelWhenInReadyState_VerifyNoStateTransitions_StateRemainsInReady() async throws {
         let contextualActor = ContextualActor<String>()
 
         let poisonPill = "PoisonPill"
@@ -169,8 +161,8 @@ extension ContextualActorTest {
         ])
     }
 
-    @MainActor
-    func testExecuteActionThatIsCancelled_ThenSubmitPoisonPillActionAfterActionIsCancelled_VerifyCancelledActionCausesATransitionToTheReadyState() async throws {
+    @Test @MainActor
+    func executeActionThatIsCancelled_ThenSubmitPoisonPillActionAfterActionIsCancelled_VerifyCancelledActionCausesATransitionToTheReadyState() async throws {
         let contextualActor = ContextualActor<String>()
 
         let poisonPill = "PoisonPill"
@@ -191,12 +183,13 @@ extension ContextualActorTest {
         // Suspend the test until the `actionThatIsCancelled` is executing.
         // At this point, the `actionThatIsCancelled` is now waiting for the test
         // to signal the `waitForCancellationExpectation` (see below).
-        await fulfillment(of: [executingExpectation])
+        let result = await XCTWaiter().fulfillment(of: [executingExpectation], timeout: 3)
+        #expect(result == .completed)
 
-        XCTAssertEqual(.busy(nil, .indeterminate), contextualActor.state)
+        #expect(contextualActor.state == .busy(nil, .indeterminate))
         // Calling cancel immediately puts the contextual actor in the `.ready` state.
         contextualActor.cancel()
-        XCTAssertEqual(.ready, contextualActor.state)
+        #expect(contextualActor.state == .ready)
 
         // The underlying `Task` should now be cancelled, so let's signal the `actionThatIsCancelled`
         // to continue executing. The `MockWorkflowAction` at this point checks the `Task`'s cancellation
@@ -215,13 +208,13 @@ extension ContextualActorTest {
             // @Observable macro works with the `withObservationTracking(apply:onChange:)` function, only the
             // last state at the end of the main run loop is observed.
             // .ready,
-            .busy(nil, .indeterminate),
+                .busy(nil, .indeterminate),
             .success(poisonPill)
         ])
     }
 
-    @MainActor
-    func testExecuteActionThatIsCancelled_ThenSubmitPoisonPillActionBeforeActionIsCancelled_VerifyCancelledActionCausesATransitionToTheReadyState() async throws {
+    @Test @MainActor
+    func executeActionThatIsCancelled_ThenSubmitPoisonPillActionBeforeActionIsCancelled_VerifyCancelledActionCausesATransitionToTheReadyState() async throws {
         let contextualActor = ContextualActor<String>()
 
         let poisonPill = "PoisonPill"
@@ -242,11 +235,12 @@ extension ContextualActorTest {
         // Suspend the test until the `actionThatIsCancelled` is executing.
         // At this point, the `actionThatIsCancelled` is now waiting for the test
         // to signal the `waitForCancellationExpectation` (see below).
-        await fulfillment(of: [executingExpectation])
+        let result = await XCTWaiter().fulfillment(of: [executingExpectation], timeout: 3)
+        #expect(result == .completed)
 
-        XCTAssertEqual(.busy(nil, .indeterminate), contextualActor.state)
+        #expect(contextualActor.state == .busy(nil, .indeterminate))
         contextualActor.cancel()
-        XCTAssertEqual(.ready, contextualActor.state)
+        #expect(contextualActor.state == .ready)
 
         // Important... the poison pill action begins execution before the `actionThatIsCancelled` knows that
         // it's been cancelled. The contextual resource ignores the `CancellationError` because the poison
@@ -270,8 +264,8 @@ extension ContextualActorTest {
 
 extension ContextualActorTest {
 
-    @MainActor
-    func testExecuteActionThatIsCancelledWhenPreviousStateIsSuccess_VerifyCapturedStates() async throws {
+    @Test @MainActor
+    func executeActionThatIsCancelledWhenPreviousStateIsSuccess_VerifyCapturedStates() async throws {
 
         let contextualActor = ContextualActor<String>()
 
@@ -293,11 +287,12 @@ extension ContextualActorTest {
         contextualActor.execute(action)
         contextualActor.execute(PoisonPillWorkflowAction(poisonPill: poisonPill))
 
-        await fulfillment(of: [executingExpectation])
+        let result = await XCTWaiter().fulfillment(of: [executingExpectation], timeout: 3)
+        #expect(result == .completed)
 
-        XCTAssertEqual(.busy("Brian", .indeterminate), contextualActor.state)
+        #expect(contextualActor.state == .busy("Brian", .indeterminate))
         contextualActor.cancel()
-        XCTAssertEqual(.ready, contextualActor.state)
+        #expect(contextualActor.state == .ready)
 
         waitForCancellationExpectation.fulfill()
 
@@ -311,8 +306,8 @@ extension ContextualActorTest {
         ])
     }
 
-    @MainActor
-    func testCancelDoesNotExecuteEnqueuedWorkflowActions() async throws {
+    @Test @MainActor
+    func cancelDoesNotExecuteEnqueuedWorkflowActions() async throws {
         let contextualActor = ContextualActor<String>()
 
         let poisonPill = "PoisonPill"
@@ -329,7 +324,8 @@ extension ContextualActorTest {
         ))
         contextualActor.execute(action)
 
-        await fulfillment(of: [executingExpectation])
+        let result = await XCTWaiter().fulfillment(of: [executingExpectation], timeout: 3)
+        #expect(result == .completed)
 
         // The current action is now executing.
         // Let's go ahead and enqueue a few workflow actions.
@@ -360,8 +356,8 @@ extension ContextualActorTest {
 
 extension ContextualActorTest {
 
-    @MainActor
-    func testExecuteActionThatThrowsAnError_VerifyErrorIsCaptured() async throws {
+    @Test @MainActor
+    func executeActionThatThrowsAnError_VerifyErrorIsCaptured() async throws {
         let contextualActor = ContextualActor<String>(initialValue: "Brian")
 
         let error = MockError()
@@ -384,8 +380,8 @@ extension ContextualActorTest {
 
 extension ContextualActorTest {
 
-    @MainActor
-    func testResetWhenInReadyState_NoAdditionalReadyStateChangesArePublished() async throws {
+    @Test @MainActor
+    func resetWhenInReadyState_NoAdditionalReadyStateChangesArePublished() async throws {
         let contextualActor = ContextualActor<String>()
 
         let poisonPill = "PoisonPill"
@@ -410,8 +406,8 @@ extension ContextualActorTest {
         ])
     }
 
-    @MainActor
-    func testResetWhenInSuccessState_TransitionsToReadyState() async throws {
+    @Test @MainActor
+    func resetWhenInSuccessState_TransitionsToReadyState() async throws {
         let contextualActor = ContextualActor<String>()
 
         try await transition(contextualActor: contextualActor, toValue: "Brian")
@@ -432,8 +428,8 @@ extension ContextualActorTest {
         ])
     }
 
-    @MainActor
-    func testResetWhenInErrorState_TransitionsToReadyState() async throws {
+    @Test @MainActor
+    func resetWhenInErrorState_TransitionsToReadyState() async throws {
         let contextualActor = ContextualActor<String>()
 
         let error = MockError()
@@ -464,8 +460,8 @@ extension ContextualActorTest {
         ])
     }
 
-    @MainActor
-    func testResetDoesNotExecuteEnqueuedWorkflowActions() async throws {
+    @Test @MainActor
+    func resetDoesNotExecuteEnqueuedWorkflowActions() async throws {
         let contextualActor = ContextualActor<String>()
 
         let poisonPill = "PoisonPill"
@@ -482,7 +478,8 @@ extension ContextualActorTest {
         ))
         contextualActor.execute(action)
 
-        await fulfillment(of: [executingExpectation])
+        let result = await XCTWaiter().fulfillment(of: [executingExpectation], timeout: 3)
+        #expect(result == .completed)
 
         // The current action is now executing.
         // Let's go ahead and enqueue a few workflow actions.
@@ -493,7 +490,7 @@ extension ContextualActorTest {
         contextualActor.execute(MockWorkflowAction(state: .mockResult("Banana")))
 
         contextualActor.reset()
-        XCTAssertEqual(.ready, contextualActor.state)
+        #expect(contextualActor.state == .ready)
 
         waitForCancellationExpectation.fulfill()
 
@@ -526,7 +523,7 @@ extension ContextualActorTest {
 
         contextualActor.execute(MockWorkflowAction(state: .mockResult(value)))
 
-        XCTAssertTrue(contextualActor.state.isBusy)
+        #expect(contextualActor.state.isBusy)
 
         let progress = Progress()
         try await observer.verify(expectedStates: [
@@ -561,7 +558,7 @@ extension ContextualActorTest {
         case .ready:
             return nil
         case .busy(_, _):
-            XCTFail("Invalid initialState")
+            Issue.record("Invalid initialState")
             return nil
         case .success(let value):
             return value

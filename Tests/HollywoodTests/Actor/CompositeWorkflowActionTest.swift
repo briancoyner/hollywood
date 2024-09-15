@@ -1,14 +1,15 @@
 import Foundation
-import XCTest
+import Testing
 
 import Hollywood
 
-final class CompositeWorkflowActionTest: XCTestCase {
+struct CompositeWorkflowActionTest {
 }
 
 extension CompositeWorkflowActionTest {
 
-    func testCompositeActionDefaultExecuteImplementationExecutesTheAction() async throws {
+    @Test
+    func compositeActionDefaultExecuteImplementationExecutesTheAction() async throws {
 
         struct TestCompositeAction: CompositeWorkflowAction {
             func execute() async throws -> String {
@@ -39,6 +40,6 @@ extension CompositeWorkflowActionTest {
             return try await compositeAction.execute()
         }
 
-        XCTAssertEqual("Brian Coyner", result)
+        #expect(result == "Brian Coyner")
     }
 }

@@ -1,15 +1,16 @@
 import Foundation
-import XCTest
+import Testing
 
 import Hollywood
 
-final class TaskProgressTest: XCTestCase {
+struct TaskProgressTest {
 }
 
 extension TaskProgressTest {
 
     /// This test is mostly validating generating understanding of how the `TaskLocal` API works.
-    func testGeneralTaskProgressUsage() async throws {
+    @Test
+    func generalTaskProgressUsage() async throws {
 
         let progressA = Progress(totalUnitCount: 50)
         async let asyncA = TaskProgress.$progress.withValue(progressA) {
@@ -33,12 +34,12 @@ extension TaskProgressTest {
         let resultB = await asyncB
         let resultC = await asyncC
 
-        XCTAssertEqual("ResultA", resultA)
-        XCTAssertEqual("ResultB", resultB)
-        XCTAssertEqual("ResultC", resultC)
+        #expect(resultA == "ResultA")
+        #expect(resultB == "ResultB")
+        #expect(resultC == "ResultC")
 
-        XCTAssertEqual(50, progressA.completedUnitCount)
-        XCTAssertEqual(100, progressB.completedUnitCount)
-        XCTAssertEqual(150, progressC.completedUnitCount)
+        #expect(progressA.completedUnitCount == 50)
+        #expect(progressB.completedUnitCount == 100)
+        #expect(progressC.completedUnitCount == 150)
     }
 }

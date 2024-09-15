@@ -1,14 +1,15 @@
 import Foundation
-import XCTest
+import Testing
 
 @testable import Hollywood
 
-final class ProgressReportingWorkflowActionTest: XCTestCase {
+struct ProgressReportingWorkflowActionTest {
 }
 
 extension ProgressReportingWorkflowActionTest {
 
-    func testProgressReportingAPIMisuseErrorIsThrownIfTheTaskLocalProgressIsNotProperlySetUpOnTheTaskLocal() async throws {
+    @Test
+    func progressReportingAPIMisuseErrorIsThrownIfTheTaskLocalProgressIsNotProperlySetUpOnTheTaskLocal() async throws {
 
         struct MockProgressReportingWorkflowAction: ProgressReportingWorkflowAction {
             typealias T = String
@@ -23,7 +24,7 @@ extension ProgressReportingWorkflowActionTest {
         let action = MockProgressReportingWorkflowAction(pendingUnitCount: 100)
         do {
             _ = try await action.execute()
-            XCTFail("Expected a `\(ProgressReportingAPIMisuseError.self) to be thrown because a parent progress was not set up.")
+            Issue.record("Expected a `\(ProgressReportingAPIMisuseError.self) to be thrown because a parent progress was not set up.")
         } catch is ProgressReportingAPIMisuseError {
             // Expected
         }
@@ -32,7 +33,8 @@ extension ProgressReportingWorkflowActionTest {
 
 extension ProgressReportingWorkflowActionTest {
 
-    func testActionCorrectlySetsTheCompletedUnitCountToMatch_WhenTheActionDoesNotExpliclitySetATotalUnitCount() async throws {
+    @Test
+    func actionCorrectlySetsTheCompletedUnitCountToMatch_WhenTheActionDoesNotExpliclitySetATotalUnitCount() async throws {
 
         struct MockProgressReportingWorkflowAction: ProgressReportingWorkflowAction {
             typealias T = String
@@ -54,15 +56,16 @@ extension ProgressReportingWorkflowActionTest {
             return try await action.execute()
         }
 
-        XCTAssertEqual("Brian", result)
-        XCTAssertEqual(100, rootProgress.totalUnitCount)
-        XCTAssertEqual(100, rootProgress.completedUnitCount)
+        #expect(result == "Brian")
+        #expect(rootProgress.totalUnitCount == 100)
+        #expect(rootProgress.completedUnitCount == 100)
     }
 }
 
 extension ProgressReportingWorkflowActionTest {
 
-    func testActionCorrectlySetsTheCompletedUnitCountToMatchTheTotalUnitCount_ParentProgressCorrectlyReflectsCompletion() async throws {
+    @Test
+    func actionCorrectlySetsTheCompletedUnitCountToMatchTheTotalUnitCount_ParentProgressCorrectlyReflectsCompletion() async throws {
 
         struct MockProgressReportingWorkflowAction: ProgressReportingWorkflowAction {
             typealias T = String
@@ -84,15 +87,16 @@ extension ProgressReportingWorkflowActionTest {
             return try await action.execute()
         }
 
-        XCTAssertEqual("Brian", result)
-        XCTAssertEqual(100, rootProgress.totalUnitCount)
-        XCTAssertEqual(100, rootProgress.completedUnitCount)
+        #expect(result == "Brian")
+        #expect(rootProgress.totalUnitCount == 100)
+        #expect(rootProgress.completedUnitCount == 100)
     }
 }
 
 extension ProgressReportingWorkflowActionTest {
 
-    func testActionFailsToSetTheCompletedUnitCount_ParentProgressCorrectlyReflectsCompletion() async throws {
+    @Test
+    func actionFailsToSetTheCompletedUnitCount_ParentProgressCorrectlyReflectsCompletion() async throws {
 
         struct MockProgressReportingWorkflowAction: ProgressReportingWorkflowAction {
             typealias T = String
@@ -118,15 +122,16 @@ extension ProgressReportingWorkflowActionTest {
             return try await action.execute()
         }
 
-        XCTAssertEqual("Brian", result)
-        XCTAssertEqual(100, rootProgress.totalUnitCount)
-        XCTAssertEqual(100, rootProgress.completedUnitCount)
+        #expect(result == "Brian")
+        #expect(rootProgress.totalUnitCount == 100)
+        #expect(rootProgress.completedUnitCount == 100)
     }
 }
 
 extension ProgressReportingWorkflowActionTest {
 
-    func testActionIncorrectlySetsTheCompletedCountToBeGreaterThanTheTotalUnitCount_ParentProgressCorrectlyReflectsCompletion() async throws {
+    @Test
+    func actionIncorrectlySetsTheCompletedCountToBeGreaterThanTheTotalUnitCount_ParentProgressCorrectlyReflectsCompletion() async throws {
 
         struct MockProgressReportingWorkflowAction: ProgressReportingWorkflowAction {
             typealias T = String
@@ -152,12 +157,13 @@ extension ProgressReportingWorkflowActionTest {
             return try await action.execute()
         }
 
-        XCTAssertEqual("Brian", result)
-        XCTAssertEqual(100, rootProgress.totalUnitCount)
-        XCTAssertEqual(100, rootProgress.completedUnitCount)
+        #expect(result == "Brian")
+        #expect(rootProgress.totalUnitCount == 100)
+        #expect(rootProgress.completedUnitCount == 100)
     }
 
-    func testActionForceSetsTheParentProgressTotalUnitCountToTheActionsPendingUnitCount() async throws {
+    @Test
+    func actionForceSetsTheParentProgressTotalUnitCountToTheActionsPendingUnitCount() async throws {
 
         struct MockProgressReportingWorkflowAction: ProgressReportingWorkflowAction {
             typealias T = String
@@ -182,8 +188,8 @@ extension ProgressReportingWorkflowActionTest {
             return try await action.execute()
         }
 
-        XCTAssertEqual("Brian", result)
-        XCTAssertEqual(100, rootProgress.totalUnitCount)
-        XCTAssertEqual(100, rootProgress.completedUnitCount)
+        #expect(result == "Brian")
+        #expect(rootProgress.totalUnitCount == 100)
+        #expect(rootProgress.completedUnitCount == 100)
     }
 }

@@ -1,44 +1,41 @@
-import XCTest
+import XCTest  // XCTWaiter + XCTestExpectation
+import Testing
 
 import Hollywood
 
-final class AsyncCacheTest: XCTestCase {
+struct AsyncCacheTest {
 }
 
 // MARK: - Basic Tests
 
 extension AsyncCacheTest {
 
-    func testAwaitInitialValueReturnedValueFromTheCommand() async throws {
+    @Test
+    func awaitInitialValueReturnedValueFromTheCommand() async throws {
         let expectedInitialValue = 98
         let actor = AsyncCache<Int>(command: IncrementingIntegerCommand(initialValue: expectedInitialValue))
 
         let initialValue = try await actor.value
-        XCTAssertEqual(expectedInitialValue, initialValue)
+        #expect(initialValue == expectedInitialValue)
     }
 
-    func testAwaitValueMultipleTimesSerially_EachCallerReceivesTheCachedValue() async throws {
+    @Test
+    func awaitValueMultipleTimesSerially_EachCallerReceivesTheCachedValue() async throws {
         let expectedInitialValue = 98
         let actor = AsyncCache<Int>(command: IncrementingIntegerCommand(initialValue: expectedInitialValue))
 
-        let initialValue = try await actor.value
-        XCTAssertEqual(expectedInitialValue, initialValue)
-
-        let valueA = try await actor.value
-        let valueB = try await actor.value
-        let valueC = try await actor.value
-
-        XCTAssertEqual(expectedInitialValue, valueA)
-        XCTAssertEqual(expectedInitialValue, valueB)
-        XCTAssertEqual(expectedInitialValue, valueC)
+        #expect(try await actor.value == expectedInitialValue)
+        #expect(try await actor.value == expectedInitialValue)
+        #expect(try await actor.value == expectedInitialValue)
+        #expect(try await actor.value == expectedInitialValue)
     }
 
-    func testAwaitValueConcurrentlyUsingAsyncLet_EachCallerReceivesTheCachedValue() async throws {
+    @Test
+    func awaitValueConcurrentlyUsingAsyncLet_EachCallerReceivesTheCachedValue() async throws {
         let expectedInitialValue = 98
         let actor = AsyncCache<Int>(command: IncrementingIntegerCommand(initialValue: expectedInitialValue))
 
-        let initialValue = try await actor.value
-        XCTAssertEqual(expectedInitialValue, initialValue)
+        #expect(try await actor.value == expectedInitialValue)
 
         async let a = actor.value
         async let b = actor.value
@@ -48,22 +45,23 @@ extension AsyncCacheTest {
         let valueB = try await b
         let valueC = try await c
 
-        XCTAssertEqual(expectedInitialValue, valueA)
-        XCTAssertEqual(expectedInitialValue, valueB)
-        XCTAssertEqual(expectedInitialValue, valueC)
+        #expect(valueA == expectedInitialValue)
+        #expect(valueB == expectedInitialValue)
+        #expect(valueC == expectedInitialValue)
     }
 
-    func testAwaitValueConcurrentlyUsingATaskGroup_EachCallerReceivesTheCachedValue() async throws {
+    @Test
+    func awaitValueConcurrentlyUsingATaskGroup_EachCallerReceivesTheCachedValue() async throws {
         let expectedInitialValue = 98
         let actor = AsyncCache<Int>(command: IncrementingIntegerCommand(initialValue: expectedInitialValue))
 
         let initialValue = try await actor.value
-        XCTAssertEqual(expectedInitialValue, initialValue)
+        #expect(initialValue == expectedInitialValue)
 
         // At this point the cache has a value. Now let's submit a bunch concurrent calls to
         // grab the cached value. The cached value from the initial load is always returned.
 
-        let numberOfCallsToValue = 2000
+        let numberOfCallsToValue = 20000
         let results = try await withThrowingTaskGroup(of: (Int, Int).self) { group in
             for counter in 1...numberOfCallsToValue {
                 group.addTask {
@@ -78,9 +76,9 @@ extension AsyncCacheTest {
             return results
         }
 
-        XCTAssertEqual(numberOfCallsToValue, results.count)
+        #expect(results.count == numberOfCallsToValue)
         for result in results {
-            XCTAssertEqual(expectedInitialValue, result.value)
+            #expect(result.value == expectedInitialValue)
         }
     }
 }
@@ -89,7 +87,8 @@ extension AsyncCacheTest {
 
 extension AsyncCacheTest {
 
-    func testAwaitInitialValueThrowsAnError() async throws {
+    @Test
+    func awaitInitialValueThrowsAnError() async throws {
         final class TestError: Error {
         }
 
@@ -97,23 +96,18 @@ extension AsyncCacheTest {
 
         let actor = AsyncCache<Int>(command: ThrowErrorCommand(error: expectedError))
 
-        do {
-            let unexpectedValue = try await actor.value
-            XCTFail("Expected '\(expectedError)' to be thrown, but received result '\(unexpectedValue)'.")
-        } catch let error as TestError {
-            XCTAssertIdentical(expectedError, error)
+        await #expect { try await actor.value } throws: { error in
+            return (error as? TestError) === expectedError
         }
 
         // Do it again to ensure the cache's state can continue to deal with multiple errors.
-        do {
-            let unexpectedValue = try await actor.value
-            XCTFail("Expected '\(expectedError)' to be thrown, but received result '\(unexpectedValue)'.")
-        } catch let error as TestError {
-            XCTAssertIdentical(expectedError, error)
+        await #expect { try await actor.value } throws: { error in
+            return (error as? TestError) === expectedError
         }
     }
 
-    func testAwaitInitialValueThrowsAnError_AwaitSecondCallReturnsValueFromTheCommand() async throws {
+    @Test
+    func awaitInitialValueThrowsAnError_AwaitSecondCallReturnsValueFromTheCommand() async throws {
         final class TestError: Error {
         }
 
@@ -129,19 +123,17 @@ extension AsyncCacheTest {
 
         // The first call to `value` ends up throwing the `expectedError`. This leaves the cache
         // in a state where the next call to `value` returns the `expectedInitialValue`.
-        do {
-            let unexpectedValue = try await actor.value
-            XCTFail("Expected '\(expectedError)' to be thrown, but received result '\(unexpectedValue)'.")
-        } catch let error as TestError {
-            XCTAssertIdentical(expectedError, error)
+        await #expect { try await actor.value } throws: { error in
+            return (error as? TestError) === expectedError
         }
 
         // The second call to `value` re-executes the command, which returns the `expectedInitialValue`.
         let initialValue = try await actor.value
-        XCTAssertEqual(expectedInitialValue, initialValue)
+        #expect(initialValue == expectedInitialValue)
     }
 
-    func testAwaitInitialValueThrowsAnError_OtherCallsAreInterleavedAndCatchTheSameError() async throws {
+    @Test
+    func awaitInitialValueThrowsAnError_OtherCallsAreInterleavedAndCatchTheSameError() async throws {
         final class TestError: Error {
         }
 
@@ -170,7 +162,7 @@ extension AsyncCacheTest {
         // The `async let` allows the test to continue executing.
         //
         // Now let's wait for the `TrackedCommand` to begin execution.
-        await fulfillment(of: [executingSemaphore])
+        await XCTWaiter().fulfillment(of: [executingSemaphore], timeout: 3)
 
         // The `TrackedCommand`, which throws the `expectedError` is now executing and
         // suspended waiting on the test to signal it to continue.
@@ -191,30 +183,30 @@ extension AsyncCacheTest {
         // All suspended calls to `value` should throw the `expectedError`.
         do {
             let unexpectedValue = try await throwingInitialValue
-            XCTFail("Expected '\(expectedError)' to be thrown, but received result '\(unexpectedValue)'.")
+            Issue.record("Expected '\(expectedError)' to be thrown, but received result '\(unexpectedValue)'.")
         } catch let error as TestError {
-            XCTAssertIdentical(expectedError, error)
+            #expect(error === expectedError)
         }
 
         do {
             let unexpectedValue = try await throwingValueA
-            XCTFail("Expected '\(expectedError)' to be thrown, but received result '\(unexpectedValue)'.")
+            Issue.record("Expected '\(expectedError)' to be thrown, but received result '\(unexpectedValue)'.")
         } catch let error as TestError {
-            XCTAssertIdentical(expectedError, error)
+            #expect(error === expectedError)
         }
 
         do {
             let unexpectedValue = try await throwingValueB
-            XCTFail("Expected '\(expectedError)' to be thrown, but received result '\(unexpectedValue)'.")
+            Issue.record("Expected '\(expectedError)' to be thrown, but received result '\(unexpectedValue)'.")
         } catch let error as TestError {
-            XCTAssertIdentical(expectedError, error)
+            #expect(error === expectedError)
         }
 
         do {
             let unexpectedValue = try await throwingValueC
-            XCTFail("Expected '\(expectedError)' to be thrown, but received result '\(unexpectedValue)'.")
+            Issue.record("Expected '\(expectedError)' to be thrown, but received result '\(unexpectedValue)'.")
         } catch let error as TestError {
-            XCTAssertIdentical(expectedError, error)
+            #expect(error === expectedError)
         }
 
         // Finally, let's verify the cache can now load its value from the `IncrementingIntegerCommand`.
@@ -222,7 +214,7 @@ extension AsyncCacheTest {
         // The `AsyncCache` is now sitting in its "initial" state, which means this call to `value`
         // executes the command again.
         let actualValue = try await actor.value
-        XCTAssertEqual(expectedInitialValue, actualValue)
+        #expect(actualValue == expectedInitialValue)
     }
 }
 
@@ -230,32 +222,35 @@ extension AsyncCacheTest {
 
 extension AsyncCacheTest {
 
-    func testAwaitResetWhenInitialValueHasNotBeenCached_InitialValueIsReturned() async throws {
+    @Test
+    func awaitResetWhenInitialValueHasNotBeenCached_InitialValueIsReturned() async throws {
         let expectedInitialValue = 98
         let actor = AsyncCache<Int>(command: IncrementingIntegerCommand(initialValue: expectedInitialValue))
 
         // Calling `reset` here behaves exactly the same as calling `value`.
         let initialValue = try await actor.reset()
-        XCTAssertEqual(expectedInitialValue, initialValue)
+        #expect(initialValue == expectedInitialValue)
     }
 
-    func testAwaitResetMultipleTimesSerially_EachResetExecutesTheCommand_UpdatedValuesAreReturned() async throws {
+    @Test
+    func awaitResetMultipleTimesSerially_EachResetExecutesTheCommand_UpdatedValuesAreReturned() async throws {
         let expectedInitialValue = 98
         let cache = AsyncCache<Int>(command: IncrementingIntegerCommand(initialValue: expectedInitialValue))
 
         let initialValue = try await cache.value
-        XCTAssertEqual(expectedInitialValue, initialValue)
+        #expect(initialValue == expectedInitialValue)
 
         let updatedValueA = try await cache.reset()
         let updatedValueB = try await cache.reset()
         let updatedValueC = try await cache.reset()
 
-        XCTAssertEqual(expectedInitialValue + 1, updatedValueA)
-        XCTAssertEqual(expectedInitialValue + 2, updatedValueB)
-        XCTAssertEqual(expectedInitialValue + 3, updatedValueC)
+        #expect(updatedValueA == expectedInitialValue + 1)
+        #expect(updatedValueB == expectedInitialValue + 2)
+        #expect(updatedValueC == expectedInitialValue + 3)
     }
 
-    func testAwaitResetConcurrentlyUsingAsyncLet_EachResetSuspendsWaitingForTheInitialValue() async throws {
+    @Test
+    func awaitResetConcurrentlyUsingAsyncLet_EachResetSuspendsWaitingForTheInitialValue() async throws {
         let expectedInitialValue = 98
         let executingSemaphore = XCTestExpectation()
         let waitingSemaphore = XCTestExpectation()
@@ -272,11 +267,12 @@ extension AsyncCacheTest {
         ]))
 
         let initialValue = try await cache.value
-        XCTAssertEqual(expectedInitialValue, initialValue)
+        #expect(initialValue == expectedInitialValue)
 
         async let updatedA = cache.reset()
 
-        await fulfillment(of: [executingSemaphore])
+        let result = await XCTWaiter().fulfillment(of: [executingSemaphore], timeout: 3)
+        #expect(result == .completed)
 
         // The first reset call is executing and waiting for the test to signal the tracked command
         // to continue. We now call reset two more times while the cache is in the "busy" state.
@@ -289,18 +285,19 @@ extension AsyncCacheTest {
         let valueB = try await updatedB
         let valueC = try await updatedC
 
-        XCTAssertEqual(151, valueA)
-        XCTAssertEqual(151, valueB)
-        XCTAssertEqual(151, valueC)
+        #expect(valueA == 151)
+        #expect(valueB == 151)
+        #expect(valueC == 151)
 
         // This call to `value` executes the command again because all suspended awaits completed.
         // The value should now be set to the `expectedInitialValue + 1` as set up in the
         // `CompositeCommand` above.
         let updatedValue = try await cache.reset()
-        XCTAssertEqual(expectedInitialValue + 1, updatedValue)
+        #expect(updatedValue == expectedInitialValue + 1)
     }
 
-    func testAwaitResetWhenCacheIsBusyAwaitingTheCommandToThrowAnError_ResetRequestAwaitsErrorThenExecutesTheCommandWhichReturnsAValue() async throws {
+    @Test
+    func awaitResetWhenCacheIsBusyAwaitingTheCommandToThrowAnError_ResetRequestAwaitsErrorThenExecutesTheCommandWhichReturnsAValue() async throws {
         final class TestError: Error {
         }
 
@@ -321,7 +318,8 @@ extension AsyncCacheTest {
 
         async let initialValue = cache.value
 
-        await fulfillment(of: [executingSemaphore])
+        let result = await XCTWaiter().fulfillment(of: [executingSemaphore], timeout: 3)
+        #expect(result == .completed)
 
         // The first reset call is executing and waiting for the test to signal the tracked command
         // to continue. We now call reset to enqueue a reset call of the value.
@@ -331,20 +329,20 @@ extension AsyncCacheTest {
 
         do {
             let unexpectedValue = try await initialValue
-            XCTFail("Expected '\(expectedError)' to be thrown, but received result '\(unexpectedValue)'.")
+            Issue.record("Expected '\(expectedError)' to be thrown, but received result '\(unexpectedValue)'.")
         } catch let error as TestError {
-            XCTAssertIdentical(expectedError, error)
+            #expect(error === expectedError)
         }
 
         let valueA = try await updatedA
-
-        XCTAssertEqual(expectedInitialValue, valueA)
+        #expect(valueA == expectedInitialValue)
 
         let currentValue = try await cache.value
-        XCTAssertEqual(expectedInitialValue, currentValue)
+        #expect(currentValue == expectedInitialValue)
     }
 
-    func testResetWhenCacheIsBusyAwaitingTheCommandToReturnTheInitialValue_ResetRequestAwaitsAndReturnsTheInitialValue() async throws {
+    @Test
+    func resetWhenCacheIsBusyAwaitingTheCommandToReturnTheInitialValue_ResetRequestAwaitsAndReturnsTheInitialValue() async throws {
         final class TestError: Error {
         }
 
@@ -366,7 +364,8 @@ extension AsyncCacheTest {
 
         async let initialValue = cache.value
 
-        await fulfillment(of: [executingSemaphore])
+        let result = await XCTWaiter().fulfillment(of: [executingSemaphore], timeout: 3)
+        #expect(result == .completed)
 
         // The first reset call is executing and waiting for the test to signal the tracked command
         // to continue. We now call reset to enqueue a reset call of the value.
@@ -375,23 +374,24 @@ extension AsyncCacheTest {
         waitingSemaphore.fulfill()
 
         let actualInitialValue = try await initialValue
-        XCTAssertEqual(expectedInitialValue, actualInitialValue)
+        #expect(actualInitialValue == expectedInitialValue)
 
         let valueA = try await updatedA
-        XCTAssertEqual(expectedInitialValue, valueA)
+        #expect(valueA == expectedInitialValue)
 
         do {
             let unexpectedValue = try await cache.reset()
-            XCTFail("Expected '\(expectedError)' to be thrown, but received result '\(unexpectedValue)'.")
+            Issue.record("Expected '\(expectedError)' to be thrown, but received result '\(unexpectedValue)'.")
         } catch let error as TestError {
-            XCTAssertIdentical(expectedError, error)
+            #expect(error === expectedError)
         }
 
         let currentValue = try await cache.reset()
-        XCTAssertEqual(expectedInitialValue + 1, currentValue)
+        #expect(currentValue == expectedInitialValue + 1)
     }
 
-    func testResetThrowsAnErrorWhenThereIsACurrentValue_CurrentValueIsThrownAwayBecauseTheValueIsAssumedToBeStale() async throws {
+    @Test
+    func resetThrowsAnErrorWhenThereIsACurrentValue_CurrentValueIsThrownAwayBecauseTheValueIsAssumedToBeStale() async throws {
         final class TestError: Error {
         }
 
@@ -404,8 +404,7 @@ extension AsyncCacheTest {
             IncrementingIntegerCommand(initialValue: expectedInitialValue + 100),
         ]))
 
-        let initialValue = try await cache.value
-        XCTAssertEqual(expectedInitialValue, initialValue)
+        #expect(try await cache.value == expectedInitialValue)
 
         // Now let's initiate a reset that ends up throwing an error. In this case, the cache
         // throws away the current value because the value is assumed to be stale (hence the
@@ -413,14 +412,14 @@ extension AsyncCacheTest {
         // command.
         do {
             let unexpectedValue = try await cache.reset()
-            XCTFail("Task should have been cancelled, but a value \(unexpectedValue) was returned.")
+            Issue.record("Task should have been cancelled, but a value \(unexpectedValue) was returned.")
         } catch let error as TestError {
-            XCTAssertIdentical(expectedError, error)
+            #expect(error === expectedError)
         }
 
         // The reset successfully canceled. The cache should still return its initial value.
         let currentValue = try await cache.value
-        XCTAssertEqual(expectedInitialValue + 100, currentValue)
+        #expect(currentValue == expectedInitialValue + 100)
     }
 }
 
@@ -428,7 +427,8 @@ extension AsyncCacheTest {
 
 extension AsyncCacheTest {
 
-    func testCancelInitialValue_AwaitingTheValueAgainExecutesTheCommand() async throws {
+    @Test
+    func cancelInitialValue_AwaitingTheValueAgainExecutesTheCommand() async throws {
         let expectedInitialValue = 98
 
         let executingSemaphore = XCTestExpectation()
@@ -456,25 +456,27 @@ extension AsyncCacheTest {
             return try await cache.value
         }
 
-        await fulfillment(of: [executingSemaphore])
+        let result = await XCTWaiter().fulfillment(of: [executingSemaphore], timeout: 3)
+        #expect(result == .completed)
 
         task.cancel()
         waitingSemaphore.fulfill()
 
         do {
             let unexpectedValue = try await task.value
-            XCTFail("Task should have been cancelled, but a value \(unexpectedValue) was returned.")
+            Issue.record("Task should have been cancelled, but a value \(unexpectedValue) was returned.")
         } catch {
-            XCTAssertTrue(error is CancellationError)
+            #expect(error is CancellationError)
         }
 
         // Calling `value` again executes the `IncrementingIntegerCommand` noted above, which
         // returns the expected initial value.
         let initialValue = try await cache.value
-        XCTAssertEqual(expectedInitialValue, initialValue)
+        #expect(initialValue == expectedInitialValue)
     }
 
-    func testCancelResetWhenThereIsACurrentValue_CurrentValueRemainsSet() async throws {
+    @Test
+    func cancelResetWhenThereIsACurrentValue_CurrentValueRemainsSet() async throws {
         let expectedInitialValue = 98
         let executingSemaphore = XCTestExpectation()
         let waitingSemaphore = XCTestExpectation()
@@ -489,7 +491,7 @@ extension AsyncCacheTest {
         ]))
 
         let initialValue = try await cache.value
-        XCTAssertEqual(expectedInitialValue, initialValue)
+        #expect(initialValue == expectedInitialValue)
 
         // Now let's initiate a reset and then cancel the reset while the command is executing.
         // The cancellation ends up throwing a `CancellationError`. The caller of the reset
@@ -500,24 +502,26 @@ extension AsyncCacheTest {
             return try await cache.reset()
         }
 
-        await fulfillment(of: [executingSemaphore])
+        let result = await XCTWaiter().fulfillment(of: [executingSemaphore], timeout: 3)
+        #expect(result == .completed)
 
         task.cancel()
         waitingSemaphore.fulfill()
 
         do {
             let unexpectedValue = try await task.value
-            XCTFail("Task should have been cancelled, but a value \(unexpectedValue) was returned.")
+            Issue.record("Task should have been cancelled, but a value \(unexpectedValue) was returned.")
         } catch {
-            XCTAssertTrue(error is CancellationError)
+            #expect(error is CancellationError)
         }
 
         // The reset successfully canceled. The cache should still return its initial value.
         let currentValue = try await cache.value
-        XCTAssertEqual(expectedInitialValue, currentValue)
+        #expect(currentValue == expectedInitialValue)
     }
 
-    func testCancelUnstructuredTaskAwaitingResultOfValueBeingRetrievedFromAnotherCall() async throws {
+    @Test
+    func cancelUnstructuredTaskAwaitingResultOfValueBeingRetrievedFromAnotherCall() async throws {
         let expectedInitialValue = 98
         let executingSemaphore = XCTestExpectation()
         let waitingSemaphore = XCTestExpectation()
@@ -535,15 +539,29 @@ extension AsyncCacheTest {
         async let initialValue = cache.value
 
         // Now let's wait for the command that loads the initial value to begin execution.
-        await fulfillment(of: [executingSemaphore])
+        let result = await XCTWaiter().fulfillment(of: [executingSemaphore], timeout: 3)
+        #expect(result == .completed)
 
         // Next let's initiate a call to `value` from three different unstructured `Task`s.
         let taskA = Task {
             return try await cache.value
         }
 
+        struct UnexpectedValueWarning: Error {
+        }
+
         let taskB = Task {
-            return try await cache.value
+            let value = try await cache.value
+
+            // Note: Due to a race condition with the cache's "on cancel" handler, this task
+            // may actually receive a value. The task, though, should still be cancelled.
+            // Therefore, we check for cancellation here, too, to ensure the expectation below
+            // correctly captures an error.
+            if Task.isCancelled {
+                throw UnexpectedValueWarning()
+            }
+
+            return value
         }
 
         let taskC = Task {
@@ -559,28 +577,28 @@ extension AsyncCacheTest {
 
         // The initial call to `value` should match the expected result.
         let currentValue = try await initialValue
-        XCTAssertEqual(expectedInitialValue, currentValue)
+        #expect(currentValue == expectedInitialValue)
 
         // The unstructured Task "A" call to `value` should match the expected result.
         let currentValueA = try await taskA.value
-        XCTAssertEqual(expectedInitialValue, currentValueA)
+        #expect(currentValueA == expectedInitialValue)
 
         // The unstructured Task "B" call to `value` should have thrown a `CancellationError`
         // because the task was cancelled.
         do {
             let unexpectedValue = try await taskB.value
-            XCTFail("Task should have been cancelled, but a value \(unexpectedValue) was returned.")
+            Issue.record("Task should have been cancelled, but a value \(unexpectedValue) was returned.")
         } catch {
-            XCTAssertTrue(error is CancellationError)
+            #expect(error is CancellationError || error is UnexpectedValueWarning)
         }
 
         // The unstructured Task "C" call to `value` should match the expected result.
         let currentValueC = try await taskC.value
-        XCTAssertEqual(expectedInitialValue, currentValueC)
+        #expect(currentValueC == expectedInitialValue)
 
         // Finally, calling `value` again should return the cached value with no further
         // calls to the command (as verified by the `CompositeCommand` implementation).
         let cachedValue = try await cache.value
-        XCTAssertEqual(expectedInitialValue, cachedValue)
+        #expect(cachedValue == expectedInitialValue)
     }
 }
