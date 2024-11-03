@@ -6,7 +6,7 @@ import Foundation
 /// 1) It tells the reader that the ``WorkflowAction`` leans on other ``WorkflowAction``s to complete the action.
 /// 2) Exposes a convenience method for executing ``WorkflowAction``s without having to explicitly invoke the action's ``execute(_:)`` method.
 ///
-/// Example implementation that mimics how an app may sign in a user.
+/// Example Implementation that mimics how an app may sign in a user.
 ///
 /// ```
 /// struct SignInUserWorkflowAction: CompositeWorkflowAction {

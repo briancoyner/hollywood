@@ -1,4 +1,5 @@
-import XCTest
+import XCTest  // XCTWaiter + XCTestExpectation
+import Testing
 
 import Hollywood
 
@@ -24,7 +25,8 @@ extension TrackedCommand {
 
     func execute() async throws -> Int {
         executingSemaphore.fulfill()
-        await XCTWaiter().fulfillment(of: [waitingSemaphore])
+        let result = await XCTWaiter().fulfillment(of: [waitingSemaphore], timeout: 3)
+        #expect(result == .completed)
 
         try Task.checkCancellation()
 

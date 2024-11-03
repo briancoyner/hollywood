@@ -1,6 +1,6 @@
 import Foundation
 
-/// An instance of this class executes a `WorkflowAction<T>` using a private `Task`.
+/// An instance of this class executes a `WorkflowAction<T>` using a privately created `Task`.
 @MainActor
 final class WorkflowActionExecutor<T: Sendable> {
 

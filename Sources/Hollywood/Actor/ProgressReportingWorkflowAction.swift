@@ -6,7 +6,7 @@ import OSLog
 /// value. The action's ``execute(withProgress:)`` implementation is responsible for updating the given `Progress` object's `Progress/totalUnitCount`
 /// to reflect the total amount of work to be done, and to update the `Progress/completedUnitCount` value as work completes.
 ///
-/// - Important: Developers conforming to this protocol must implement the ``execute(withProgress:)``.``.
+/// - Important: Developers conforming to this protocol must implement the ``execute(withProgress:)``. Do **not** implement ``execute()``.
 public protocol ProgressReportingWorkflowAction<T>: CompositeWorkflowAction {
 
     /// The number of "units of work" this action contributes to the parent action's overall work. If, for example, the parent `Progress/totalUnitCount`
